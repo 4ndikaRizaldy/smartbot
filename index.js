@@ -14,6 +14,15 @@ let guessingGame = {};
 let logicGame = {};
 let botActive = true; //default aktif
 
+//Kode Bahasa
+const validLanguages = [
+    'af', 'sq', 'am', 'ar', 'hy', 'eu', 'bn', 'bs', 'bg', 'ca', 'zh-CN', 'zh-TW', 'hr', 'cs',
+    'da', 'nl', 'en', 'et', 'tl', 'fi', 'fr', 'ka', 'de', 'el', 'gu', 'ht', 'he', 'hi', 'hu', 'is',
+    'id', 'it', 'ja', 'kn', 'kk', 'km', 'ko', 'lv', 'lt', 'ms', 'mt', 'no', 'fa', 'pl', 'pt', 'pa',
+    'ro', 'ru', 'sr', 'sk', 'sl', 'es', 'sw', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi', 'cy', 'yi'
+];
+
+
 // 🔹 Daftar Auto Responder
 const autoResponses = [
     {
@@ -296,23 +305,38 @@ Selamat bersenang-senang! 🎉
 
 
 
+//Translate
 async function translateText(textMessage, remoteJid, sock) {
-    try {
-        const args = textMessage.split(" ");
-        if (args.length < 3) {
-            await sock.sendMessage(remoteJid, { text: "⚠️ Format salah! Contoh: `!translate en Halo dunia`" });
-            return;
-        }
-
-        const lang = args[1];  // Ambil kode bahasa
-        const text = args.slice(2).join(" ");  // Gabungkan teks setelah kode bahasa
-
-        const result = await translate(text, { to: lang });
-        await sock.sendMessage(remoteJid, { text: `🔄 Terjemahan (${lang}): ${result.text}` });
-    } catch (error) {
-        console.error("Error saat menerjemahkan:", error);
-        await sock.sendMessage(remoteJid, { text: "❌ Gagal menerjemahkan teks. Pastikan kode bahasa benar!" });
+  try {
+    const args = textMessage.split(" ");
+    if (args.length < 3) {
+      await sock.sendMessage(remoteJid, {
+        text: "⚠️ Format salah! Contoh: `!translate en Halo dunia`",
+      });
+      return;
     }
+
+    const lang = args[1]; // Ambil kode bahasa
+    const text = args.slice(2).join(" "); // Gabungkan teks setelah kode bahasa
+
+    // Cek apakah kode bahasa valid
+    if (!validLanguages.includes(lang)) {
+      await sock.sendMessage(remoteJid, {
+        text: "❌ Kode bahasa tidak valid! Pastikan kode bahasa yang dimasukkan benar.",
+      });
+      return;
+    }
+
+    const result = await translate(text, { to: lang });
+    await sock.sendMessage(remoteJid, {
+      text: `🔄 Terjemahan (${lang}): ${result.text}`,
+    });
+  } catch (error) {
+    console.error("Error saat menerjemahkan:", error);
+    await sock.sendMessage(remoteJid, {
+      text: "❌ Gagal menerjemahkan teks. Pastikan kode bahasa benar!",
+    });
+  }
 }
 
 

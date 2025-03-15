@@ -4,6 +4,8 @@ const { useMultiFileAuthState } = require("@whiskeysockets/baileys");
 const moment = require("moment");
 require("moment-hijri");
 const axios = require("axios");
+const math = require("mathjs");
+const translate = require('google-translate-api-x');
 
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
@@ -34,7 +36,7 @@ const autoResponses = [
     { keyword: "pagi", response: "Morning! Sudah siap menjalani hari ini? ☀️" },
     {
         keyword: "siang",
-        response: "Jangan lupa lunch biar tetap bertenaga! 🍛",
+        response: "Jangan lupa lunch biar tetap bertenaga! 🍛\n tapi karena lagi puasa sabar yaa",
     },
     {
         keyword: "sore",
@@ -93,7 +95,7 @@ const autoResponses = [
         response: "Makan dulu yuk! Jangan sampai perut kosong! 🍕🍔",
     },
     {
-        keyword: "gws",
+        keyword: "sakit",
         response: "Semoga cepat pulih! Jaga kesehatan dan istirahat ya! 🍵",
     },
 ];
@@ -193,25 +195,50 @@ async function startBot() {
         if (!botActive) return;
 
         // Perintah bot yang lain
-        if (textMessage === "!menu") showMenu(remoteJid, sock);
-        else if (textMessage === "!ping")
-            sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
-        else if (textMessage === "!tagall") mentionAll(remoteJid, sock);
-        else if (textMessage === "!jumlahanggota")
-            countGroupMembers(remoteJid, sock);
-        else if (textMessage === "!tebakangka")
-            startGuessingGame(remoteJid, sock);
-        else if (textMessage.startsWith("!jawab "))
-            checkGuess(textMessage, remoteJid, sender, sock);
-        else if (textMessage === "!tanggal") sendDate(remoteJid, sock);
-        else if (textMessage === "!faktaunik") sendFaktaUnik(remoteJid, sock);
-        else if (textMessage.startsWith("!quran "))
-            getQuranAyat(textMessage, remoteJid, sock);
-        else if (textMessage === "!tebaklogika")
-            startLogicGame(remoteJid, sock);
-        else if (textMessage.startsWith("!jawablogika "))
-            checkLogicAnswer(textMessage, remoteJid, sender, sock);
-        else if (textMessage === "!kluelogika") giveLogicClue(remoteJid, sock);
+        if (textMessage === "!menu") {
+    showMenu(remoteJid, sock);
+} else if (textMessage === "!ping") {
+    sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
+} else if (textMessage === "!tagall") {
+    mentionAll(remoteJid, sock);
+} else if (textMessage === "!jumlahanggota") {
+    countGroupMembers(remoteJid, sock);
+} else if (textMessage === "!tebakangka") {
+    startGuessingGame(remoteJid, sock);
+} else if (textMessage.startsWith("!jawab ")) {
+    checkGuess(textMessage, remoteJid, sender, sock);
+} else if (textMessage === "!tanggal") {
+    sendDate(remoteJid, sock);
+} else if (textMessage === "!faktaunik") {
+    sendFaktaUnik(remoteJid, sock);
+} else if (textMessage.startsWith("!quran ")) {
+    getQuranAyat(textMessage, remoteJid, sock);
+} else if (textMessage === "!tebaklogika") {
+    startLogicGame(remoteJid, sock);
+} else if (textMessage.startsWith("!jawablogika ")) {
+    checkLogicAnswer(textMessage, remoteJid, sender, sock);
+} else if (textMessage.startsWith("!ytmp3 ")) {
+    downloadYouTubeMP3(textMessage, remoteJid, sock);
+} else if (textMessage.startsWith("!wiki ")) {
+    const query = textMessage.replace("!wiki ", "").trim();
+    if (query) {
+        searchWikipedia(query, remoteJid, sock);
+    } else {
+        sock.sendMessage(remoteJid, { text: "⚠️ Masukkan kata kunci setelah *!wiki* contoh: *!wiki Albert Einstein*" });
+    }
+} else if (textMessage === "!kluelogika") {
+    giveLogicClue(remoteJid, sock);
+} else if (textMessage.startsWith("!hitung ")) { 
+    try {
+        const expression = textMessage.replace("!hitung", "").trim();
+        const result = math.evaluate(expression);
+        await sock.sendMessage(remoteJid, { text: `Hasil: ${result}` });
+    } catch (error) {
+        await sock.sendMessage(remoteJid, { text: "⚠️ Format salah! Contoh: `!hitung 5+3*2`" });
+    }
+} else if (textMessage.startsWith("!translate ")) {
+    translateText(textMessage, remoteJid, sock);
+}
         else {
             // Auto-responder unik
             const foundResponse = autoResponses.find((r) =>
@@ -227,7 +254,11 @@ async function startBot() {
 // 🔹 Fungsi untuk menampilkan menu
 const showMenu = (from, sock) => {
     const menuText = `
+    ✨ Selamat Datang di SMARTBOT! ✨
+Hai! 🤖 Aku SmartBot, siap membantu dan menghibur kamu dengan berbagai fitur menarik. Yuk, lihat daftar perintah yang bisa kamu gunakan!
+
 📌 ✨ MENU SMARTBOT ✨ 📌
+
 📢 Perintah yang bisa kamu gunakan:
 
 🔹 INFO & UTILITAS
@@ -246,14 +277,45 @@ const showMenu = (from, sock) => {
 🔹 !tanggal ➝ 📅 Menampilkan tanggal hari ini (Masehi & Hijriah)
 🔹 !faktaunik ➝ 💡 Mengirimkan fakta unik
 🔹 !quran [surat:ayat] ➝ 📖 Menampilkan ayat dan terjemahannya
+🔹 !wiki [pertanyaan] ➝ 🌍 Mencari informasi dari Wikipedia
+
+🔢 MATEMATIKA
+🔹 !hitung [ekspresi] ➝ 🧮 Menghitung ekspresi matematika (contoh: !hitung 5+3*2)
+
+🌍 BAHASA & TERJEMAHAN
+🔹 !translate [kode bahasa] [teks] ➝ 🔄 Menerjemahkan teks ke bahasa lain (contoh: !translate en Pantai)
 
 👥 GRUP & INTERAKSI
 🔸 !tagall ➝ 📢 Mention semua anggota grup
 
-💬 Coba sekarang! Kirim salah satu perintah di atas! 🚀
+💬 Coba sekarang! Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
+
+Selamat bersenang-senang! 🎉
     `;
     sock.sendMessage(from, { text: menuText });
 };
+
+
+
+async function translateText(textMessage, remoteJid, sock) {
+    try {
+        const args = textMessage.split(" ");
+        if (args.length < 3) {
+            await sock.sendMessage(remoteJid, { text: "⚠️ Format salah! Contoh: `!translate en Halo dunia`" });
+            return;
+        }
+
+        const lang = args[1];  // Ambil kode bahasa
+        const text = args.slice(2).join(" ");  // Gabungkan teks setelah kode bahasa
+
+        const result = await translate(text, { to: lang });
+        await sock.sendMessage(remoteJid, { text: `🔄 Terjemahan (${lang}): ${result.text}` });
+    } catch (error) {
+        console.error("Error saat menerjemahkan:", error);
+        await sock.sendMessage(remoteJid, { text: "❌ Gagal menerjemahkan teks. Pastikan kode bahasa benar!" });
+    }
+}
+
 
 // 🔹 Fungsi untuk mention semua anggota grup
 const mentionAll = async (from, sock) => {
@@ -272,6 +334,31 @@ const mentionAll = async (from, sock) => {
         });
     }
 };
+
+// 🔹 Fungsi untuk mencari ringkasan artikel Wikipedia
+const searchWikipedia = async (query, from, sock) => {
+    try {
+        const apiUrl = `https://id.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+        const response = await axios.get(apiUrl);
+        const data = response.data;
+
+        if (data.type === "disambiguation") {
+            sock.sendMessage(from, {
+                text: `⚠️ Hasil pencarian terlalu luas. Coba lebih spesifik!\n\n🔗 Lihat lebih lanjut: ${data.content_urls.desktop.page}`,
+            });
+            return;
+        }
+
+        const wikiText = `📖 *Wikipedia*\n\n*Judul:* ${data.title}\n\n${data.extract}\n\n🔗 Baca selengkapnya: ${data.content_urls.desktop.page}`;
+
+        sock.sendMessage(from, { text: wikiText });
+    } catch (error) {
+        sock.sendMessage(from, {
+            text: "⚠️ Maaf, artikel tidak ditemukan atau terjadi kesalahan.",
+        });
+    }
+};
+
 
 // 🔹 Fungsi untuk menghitung jumlah anggota grup
 const countGroupMembers = async (from, sock) => {

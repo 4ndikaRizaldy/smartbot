@@ -20,7 +20,6 @@ const autoResponses = [
         keyword: "halo",
         response: "Heyy! Gimana harimu? Ada yang bisa aku bantu? 😊",
     },
-    { keyword: "hai", response: "Selamat datang! Lagi sibuk atau santai? 😃" },
     {
         keyword: "terima kasih",
         response: "Sama-sama! Semoga harimu menyenangkan ya! ✨",

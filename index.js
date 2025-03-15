@@ -202,7 +202,7 @@ async function startBot() {
 // 🔹 Fungsi untuk menampilkan menu
 const showMenu = (from, sock) => {
     const menuText = `
-    ✨ Selamat Datang di SMARTBOT! ✨
+    ✨ Selamat Datang di SMARTBOT ✨
 Hai! 🤖 Aku SmartBot, siap membantu dan menghibur kamu dengan berbagai fitur menarik. Yuk, lihat daftar perintah yang bisa kamu gunakan!
 
 📌 ✨ MENU SMARTBOT ✨ 📌

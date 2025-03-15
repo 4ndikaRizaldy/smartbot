@@ -22,91 +22,31 @@ const validLanguages = [
     'ro', 'ru', 'sr', 'sk', 'sl', 'es', 'sw', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi', 'cy', 'yi'
 ];
 
-
 // 🔹 Daftar Auto Responder
 const autoResponses = [
-    {
-        keyword: "halo",
-        response: "Heyy! Gimana harimu? Ada yang bisa aku bantu? 😊",
-    },
-    {
-        keyword: "terima kasih",
-        response: "Sama-sama! Semoga harimu menyenangkan ya! ✨",
-    },
-    {
-        keyword: "makasih",
-        response: "Senang bisa membantu! Jangan lupa jaga kesehatan! 🌟",
-    },
-    {
-        keyword: "bye",
-        response: "Sampai jumpa! Jangan lupa balik lagi nanti! 👋",
-    },
-    { keyword: "pagi", response: "Morning! Sudah siap menjalani hari ini? ☀️" },
-    {
-        keyword: "siang",
-        response: "Jangan lupa lunch biar tetap bertenaga! 🍛\n tapi karena lagi puasa sabar yaa",
-    },
-    {
-        keyword: "sore",
-        response: "Saatnya santai sejenak setelah seharian beraktivitas! 🌅",
-    },
-    {
-        keyword: "malam",
-        response:
-            "Semoga sinar rembulan ini membuat tenang dan nyenyak tidurnya! 🌙✨",
-    },
-    {
-        keyword: "lagi apa",
-        response:
-            "Lagi nunggu kamu, ada yang mau diceritain atau aku bantu? 😊",
-    },
-    {
-        keyword: "kamu siapa",
-        response: "Aku Smartbot, asisten virtual yang selalu ada buat kamu! 🤖",
-    },
     {
         keyword: "smartbot!",
         response: "Aku siap membantu! Mau lihat fiturku? Coba ketik *!menu* 🤖",
     },
-    { keyword: "wkwk", response: "Haha! Seru banget ya! 😂" },
-    {
-        keyword: "love",
-        response:
-            "Cinta itu indah! Jangan lupa hargai diri sendiri juga ya! ❤️",
-    },
-    {
-        keyword: "apa kabar",
-        response: "Aku baik, thanks sudah bertanya! Gimana denganmu? 😃",
-    },
-    {
-        keyword: "semangat",
-        response: "Jangan menyerah! Kamu pasti bisa menghadapi tantangan! 💪🔥",
-    },
-    {
-        keyword: "gabut",
-        response: "Kalau bosan, coba cari aktivitas baru yang seru! 🎵📖",
-    },
-    {
-        keyword: "sedih",
-        response: "Aku di sini kalau kamu butuh teman cerita. 😊",
-    },
-    {
-        keyword: "capek",
-        response: "Jangan lupa istirahat dan minum air yang cukup ya! 💧",
-    },
-    {
-        keyword: "curhat",
-        response: "Aku siap mendengarkan. Kadang cerita bisa bikin lega. 🤗",
-    },
-    {
-        keyword: "laper",
-        response: "Makan dulu yuk! Jangan sampai perut kosong! 🍕🍔",
-    },
-    {
-        keyword: "sakit",
-        response: "Semoga cepat pulih! Jaga kesehatan dan istirahat ya! 🍵",
-    },
 ];
+
+// 🔹 Fungsi untuk menangani auto response dengan mention
+async function handleAutoResponse(message, remoteJid, senderId, sock) {
+    const lowerMessage = message.toLowerCase();
+    
+    for (const auto of autoResponses) {
+        if (lowerMessage.includes(auto.keyword)) {
+            const responseText = auto.response.replace("{mention}", `@${senderId.split("@")[0]}`);
+            
+            await sock.sendMessage(remoteJid, {
+                text: responseText,
+                mentions: [senderId], // Mentions pengguna
+            });
+            return;
+        }
+    }
+}
+
 
 // 🔹 Daftar Pertanyaan Tebak Logika
 const logicQuestions = [

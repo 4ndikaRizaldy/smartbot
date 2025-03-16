@@ -78,6 +78,7 @@ async function startBot() {
     await handleAutoResponse(textMessage, remoteJid, sender, sock);
     await handleLearning(textMessage, remoteJid, sender, sock);
     await handleCustomResponse(textMessage, remoteJid, sock);
+    checkGroupSchedule(sock); // Mulai cek jadwal otomatis
 
     // Perintah bot yang lain
     if (textMessage === "!menu") {
@@ -182,6 +183,42 @@ async function startBot() {
       await deleteLearnedResponse(textMessage, remoteJid, sock);
     } else if (textMessage.startsWith("!translate ")) {
       translateText(textMessage, remoteJid, sock);
+    } else if (textMessage === "!bukagrup") {
+      await setGroupRestriction(remoteJid, sock, false);
+    } else if (textMessage === "!tutupgrup") {
+      await setGroupRestriction(remoteJid, sock, true);
+    } else if (textMessage.startsWith("!jadwalbuka ")) {
+      const time = textMessage.replace("!jadwalbuka ", "").trim();
+      setGroupSchedule(remoteJid, time, "open", sock);
+    } else if (textMessage.startsWith("!jadwaltutup ")) {
+      const time = textMessage.replace("!jadwaltutup ", "").trim();
+      setGroupSchedule(remoteJid, time, "close", sock);
+    } else if (textMessage === "!cekjadwal") {
+      if (!scheduledGroupActions[remoteJid]) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada jadwal yang diset untuk grup ini!",
+        });
+      } else {
+        const schedule = scheduledGroupActions[remoteJid];
+        sock.sendMessage(remoteJid, {
+          text: `📅 Jadwal Grup:\n🔓 Buka: ${
+            schedule.open || "Belum diset"
+          }\n🔒 Tutup: ${schedule.close || "Belum diset"}`,
+        });
+      }
+    } else if (textMessage === "!cekjadwal") {
+      if (!scheduledGroupActions[remoteJid]) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada jadwal yang diset untuk grup ini!",
+        });
+      } else {
+        const schedule = scheduledGroupActions[remoteJid];
+        sock.sendMessage(remoteJid, {
+          text: `📅 Jadwal Grup:\n🔓 Buka: ${
+            schedule.open || "Belum diset"
+          }\n🔒 Tutup: ${schedule.close || "Belum diset"}`,
+        });
+      }
     } else "Pilihan yang anda inginkan belum tersedia";
   });
 }
@@ -897,6 +934,63 @@ async function deleteLearnedResponse(textMessage, remoteJid, sock) {
   await sock.sendMessage(remoteJid, {
     text: `✅ Berhasil menghapus: *"${question}"* dari daftar ajaran!`,
   });
+}
+
+// Buka tutup Grup
+async function setGroupRestriction(remoteJid, sock, isClosed) {
+  try {
+    await sock.groupSettingUpdate(remoteJid, isClosed ? "announcement" : "not_announcement");
+  } catch (error) {
+    console.error("❌ Gagal mengubah status grup:", error);
+    sock.sendMessage(remoteJid, { text: "⚠️ Bot harus menjadi admin untuk membuka/menutup grup!" });
+  }
+}
+
+
+let scheduledGroupActions = {}; // Simpan jadwal buka/tutup grup
+
+function setGroupSchedule(remoteJid, time, action, sock) {
+  if (!/^\d{2}:\d{2}$/.test(time)) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Format waktu salah! Gunakan HH:MM (contoh: 07:00)",
+    });
+    return;
+  }
+
+  if (!scheduledGroupActions[remoteJid]) {
+    scheduledGroupActions[remoteJid] = {};
+  }
+
+  scheduledGroupActions[remoteJid][action] = time;
+  sock.sendMessage(remoteJid, {
+    text: `✅ Grup akan *${
+      action === "open" ? "dibuka" : "ditutup"
+    }* pada ${time}`,
+  });
+}
+
+
+async function checkGroupSchedule(sock) {
+  setInterval(async () => {
+    const now = moment().tz("Asia/Jakarta").format("HH:mm");
+
+    for (const group in scheduledGroupActions) {
+      const schedule = scheduledGroupActions[group];
+
+      if (schedule.open === now) {
+        await setGroupRestriction(group, sock, false); // Buka grup
+        sock.sendMessage(group, {
+          text: "🔓 Grup telah dibuka secara otomatis!",
+        });
+      }
+      if (schedule.close === now) {
+        await setGroupRestriction(group, sock, true); // Tutup grup
+        sock.sendMessage(group, {
+          text: "🔒 Grup telah ditutup secara otomatis!",
+        });
+      }
+    }
+  }, 60000); // Cek setiap 1 menit
 }
 
 

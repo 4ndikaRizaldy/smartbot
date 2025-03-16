@@ -76,6 +76,9 @@ async function startBot() {
 
     // Periksa apakah ada auto-response yang cocok
     await handleAutoResponse(textMessage, remoteJid, sender, sock);
+    await handleLearning(textMessage, remoteJid, sender, sock);
+    await handleCustomResponse(textMessage, remoteJid, sock);
+
     // Perintah bot yang lain
     if (textMessage === "!menu") {
       showMenu(remoteJid, sock);
@@ -171,6 +174,12 @@ async function startBot() {
           text: "⚠️ Format salah! Contoh: `!hitung 5+3*2`",
         });
       }
+    } else if (textMessage.startsWith("!listajarin")) {
+      const args = textMessage.split(" ");
+      const page = args.length > 1 ? parseInt(args[1], 10) : 1;
+      await listLearnedResponses(remoteJid, sock, page);
+    } else if (textMessage.startsWith("!hapusajarin ")) {
+      await deleteLearnedResponse(textMessage, remoteJid, sock);
     } else if (textMessage.startsWith("!translate ")) {
       translateText(textMessage, remoteJid, sock);
     } else "Pilihan yang anda inginkan belum tersedia";
@@ -791,6 +800,103 @@ async function generateQRCode(text, remoteJid, sock) {
       text: "⚠️ Gagal membuat QR Code. Coba lagi!",
     });
   }
+}
+
+
+//Ajrin Bot
+// Memuat database auto-response dari file JSON
+const loadResponses = () => {
+  try {
+    return JSON.parse(fs.readFileSync("responses.json", "utf8"));
+  } catch (error) {
+    return {};
+  }
+};
+
+// Menyimpan auto-response ke file JSON
+const saveResponses = (data) => {
+  fs.writeFileSync("responses.json", JSON.stringify(data, null, 2));
+};
+
+const responses = loadResponses();
+
+async function handleLearning(textMessage, remoteJid, sender, sock) {
+  if (textMessage.startsWith("!ajarin ")) {
+    const content = textMessage.replace("!ajarin ", "").trim();
+    const [question, answer] = content.split(" = ");
+
+    if (!question || !answer) {
+      await sock.sendMessage(remoteJid, {
+        text: "⚠️ Format salah! Gunakan: `!ajarin [pertanyaan] = [jawaban]`",
+      });
+      return;
+    }
+
+    responses[question.toLowerCase()] = answer;
+    saveResponses(responses);
+
+    await sock.sendMessage(remoteJid, {
+      text: `✅ Aku sudah belajar!\n\nPertanyaan: *${question}*\nJawaban: *${answer}*`,
+    });
+  }
+}
+
+async function handleCustomResponse(textMessage, remoteJid, sock) {
+  const response = responses[textMessage.toLowerCase()];
+  if (response) {
+    await sock.sendMessage(remoteJid, { text: response });
+  }
+}
+
+async function listLearnedResponses(remoteJid, sock, page = 1) {
+  const responses = loadResponses(); // Memuat database yang sudah diajarkan
+  const keys = Object.keys(responses);
+
+  if (keys.length === 0) {
+    await sock.sendMessage(remoteJid, {
+      text: "📭 Belum ada pertanyaan yang diajarkan ke aku!",
+    });
+    return;
+  }
+
+  const itemsPerPage = 10; // Jumlah item per halaman
+  const totalPages = Math.ceil(keys.length / itemsPerPage);
+
+  // Pastikan halaman tidak melebihi total halaman
+  page = Math.max(1, Math.min(page, totalPages));
+
+  let responseList = `📚 **Daftar yang sudah diajarkan (Halaman ${page}/${totalPages})**\n\n`;
+  const start = (page - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+
+  keys.slice(start, end).forEach((question, index) => {
+    responseList += `${start + index + 1}. *${question}*\n`;
+  });
+
+  responseList += `\nGunakan *!listajarin ${
+    page + 1
+  }* untuk halaman berikutnya.`;
+
+  await sock.sendMessage(remoteJid, { text: responseList });
+}
+
+async function deleteLearnedResponse(textMessage, remoteJid, sock) {
+  const responses = loadResponses();
+  const question = textMessage.replace("!hapusajarin ", "").trim();
+
+  if (!responses[question]) {
+    await sock.sendMessage(remoteJid, {
+      text: `⚠️ Aku tidak menemukan pertanyaan: *"${question}"* dalam database!`,
+    });
+    return;
+  }
+
+  delete responses[question];
+  saveResponses(responses);
+
+  await sock.sendMessage(remoteJid, {
+    text: `✅ Berhasil menghapus: *"${question}"* dari daftar ajaran!`,
+  });
 }
 
 

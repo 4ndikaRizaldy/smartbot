@@ -78,6 +78,8 @@ async function startBot() {
     await handleAutoResponse(textMessage, remoteJid, sender, sock);
     await handleLearning(textMessage, remoteJid, sender, sock);
     await handleCustomResponse(textMessage, remoteJid, sock);
+    // Panggil fungsi untuk menangani perintah guru
+    await handleTeacherCommands(textMessage, remoteJid, sender, sock);
 
     // Perintah bot yang lain
     if (textMessage === "!menu") {
@@ -205,7 +207,8 @@ async function startBot() {
           }\n🔒 Tutup: ${schedule.close || "Belum diset"}`,
         });
       }
-    } if (textMessage.startsWith("!add ")) {
+    }
+    if (textMessage.startsWith("!add ")) {
       const phoneNumbers = textMessage.replace("!add ", "").trim().split(" ");
       await addMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage.startsWith("!remove ")) {
@@ -838,6 +841,102 @@ async function generateQRCode(text, remoteJid, sock) {
 
 
 //Ajrin Bot
+
+// **Memuat database guru dari file JSON**
+const loadTeachers = () => {
+  try {
+    return JSON.parse(fs.readFileSync("teachers.json", "utf8"));
+  } catch (error) {
+    return [];
+  }
+};
+
+// **Menyimpan daftar guru ke file JSON**
+const saveTeachers = (data) => {
+  fs.writeFileSync("teachers.json", JSON.stringify(data, null, 2));
+};
+
+let teachers = loadTeachers();
+const ADMIN_GURU = "6285253435963"; // Nomor admin utama yang dapat menambah/menghapus guru
+
+async function handleTeacherCommands(textMessage, remoteJid, sender, sock) {
+  // **Tambah Guru**
+  if (textMessage.startsWith("!tambahguru ")) {
+    if (sender.replace(/[^0-9]/g, "") !== ADMIN_GURU) {
+      await sock.sendMessage(remoteJid, { text: "⚠️ Kamu bukan admin guru!" });
+      return;
+    }
+
+    const newTeacher = textMessage
+      .replace("!tambahguru ", "")
+      .trim()
+      .replace(/[^0-9]/g, "");
+
+    if (!newTeacher || newTeacher.length < 10) {
+      await sock.sendMessage(remoteJid, { text: "⚠️ Nomor tidak valid!" });
+      return;
+    }
+
+    if (teachers.includes(newTeacher)) {
+      await sock.sendMessage(remoteJid, {
+        text: `✅ Nomor ${newTeacher} sudah terdaftar sebagai guru!`,
+      });
+      return;
+    }
+
+    teachers.push(newTeacher);
+    saveTeachers(teachers);
+
+    await sock.sendMessage(remoteJid, {
+      text: `✅ Berhasil menambahkan *${newTeacher}* sebagai guru!`,
+    });
+  }
+
+  // **Melihat Daftar Guru**
+  else if (textMessage === "!listguru") {
+    if (teachers.length === 0) {
+      await sock.sendMessage(remoteJid, {
+        text: "📭 Belum ada guru yang terdaftar!",
+      });
+      return;
+    }
+
+    let response = "📚 **Daftar Guru:**\n";
+    teachers.forEach((teacher, index) => {
+      response += `${index + 1}. *${teacher}*\n`;
+    });
+
+    await sock.sendMessage(remoteJid, { text: response });
+  }
+
+  // **Hapus Guru**
+  else if (textMessage.startsWith("!hapusguru ")) {
+    if (sender.replace(/[^0-9]/g, "") !== ADMIN_GURU) {
+      await sock.sendMessage(remoteJid, { text: "⚠️ Kamu bukan admin guru!" });
+      return;
+    }
+
+    const teacherToRemove = textMessage
+      .replace("!hapusguru ", "")
+      .trim()
+      .replace(/[^0-9]/g, "");
+
+    if (!teachers.includes(teacherToRemove)) {
+      await sock.sendMessage(remoteJid, {
+        text: `⚠️ Nomor ${teacherToRemove} tidak ditemukan dalam daftar guru!`,
+      });
+      return;
+    }
+
+    teachers = teachers.filter((teacher) => teacher !== teacherToRemove);
+    saveTeachers(teachers);
+
+    await sock.sendMessage(remoteJid, {
+      text: `✅ Berhasil menghapus *${teacherToRemove}* dari daftar guru!`,
+    });
+  }
+}
+
 // Memuat database auto-response dari file JSON
 const loadResponses = () => {
   try {

@@ -134,6 +134,15 @@ async function startBot() {
       stopRepeatReminder(remoteJid, sender, sock);
     } else if (textMessage === "!motivasi") {
       sendMotivation(remoteJid, sock);
+    } else if (textMessage.startsWith("!qrcode ")) {
+      const text = textMessage.replace("!qrcode ", "").trim();
+      if (text) {
+        generateQRCode(text, remoteJid, sock);
+      } else {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Masukkan teks atau URL setelah *!qrcode* contoh: *!qrcode https://example.com*",
+        });
+      }
     } else if (textMessage.startsWith("!shortlink ")) {
       const url = textMessage.replace("!shortlink ", "").trim();
       if (url) {
@@ -181,6 +190,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !ping ➝ 🏓 Mengecek apakah bot aktif
 🔹 !jumlahanggota ➝ 👥 Menampilkan jumlah anggota grup
 🔹 !shortlink [URL] ➝ 🔗 Memperpendek link
+🔹 !qrcode ➝   𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃 Membuat Barcode
 
 🎮 *PERMAINAN & TEBAK-TEBAKAN*
 🔹 !tebakangka ➝ 🎲 Mulai permainan tebak angka (1-10)
@@ -642,9 +652,6 @@ const setReminder = (textMessage, remoteJid, sender, sock, isGroup = false) => {
   }, reminderTime - now);
 };
 
-
-
-
 // Fungsi untuk menampilkan semua reminder
 const listReminders = (remoteJid, sock) => {
   const reminders = loadReminders();
@@ -793,6 +800,28 @@ const checkReminder = async (sock) => {
   }, 60000); // Cek setiap 1 menit
 };
 
+const QRCode = require("qrcode");
+
+async function generateQRCode(text, remoteJid, sock) {
+  try {
+    const qrCodeDataURL = await QRCode.toDataURL(text, {
+      errorCorrectionLevel: "H",
+    });
+
+    const base64Data = qrCodeDataURL.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+
+    await sock.sendMessage(remoteJid, {
+      image: buffer,
+      caption: `✅ QR Code berhasil dibuat untuk: ${text}`,
+    });
+  } catch (error) {
+    console.error("Gagal membuat QR Code:", error);
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Gagal membuat QR Code. Coba lagi!",
+    });
+  }
+}
 
 
 

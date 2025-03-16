@@ -7,6 +7,16 @@ const axios = require("axios");
 const math = require("mathjs");
 const translate = require('google-translate-api-x');
 
+
+const {
+  validLanguages,
+  autoResponses,
+  logicQuestions,
+  getRandomFakta,
+  pantunList,
+} = require("./data");
+
+
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
 
@@ -14,21 +24,7 @@ let guessingGame = {};
 let logicGame = {};
 let botActive = true; //default aktif
 
-//Kode Bahasa
-const validLanguages = [
-    'af', 'sq', 'am', 'ar', 'hy', 'eu', 'bn', 'bs', 'bg', 'ca', 'zh-CN', 'zh-TW', 'hr', 'cs',
-    'da', 'nl', 'en', 'et', 'tl', 'fi', 'fr', 'ka', 'de', 'el', 'gu', 'ht', 'he', 'hi', 'hu', 'is',
-    'id', 'it', 'ja', 'kn', 'kk', 'km', 'ko', 'lv', 'lt', 'ms', 'mt', 'no', 'fa', 'pl', 'pt', 'pa',
-    'ro', 'ru', 'sr', 'sk', 'sl', 'es', 'sw', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi', 'cy', 'yi'
-];
 
-// 🔹 Daftar Auto Responder
-const autoResponses = [
-    {
-        keyword: "smartbot!",
-        response: "Aku siap membantu! Mau lihat fiturku? Coba ketik *!menu* 🤖",
-    },
-];
 
 // 🔹 Fungsi untuk menangani auto response dengan mention
 async function handleAutoResponse(message, remoteJid, senderId, sock) {
@@ -36,7 +32,7 @@ async function handleAutoResponse(message, remoteJid, senderId, sock) {
     
     for (const auto of autoResponses) {
         if (lowerMessage.includes(auto.keyword)) {
-            const responseText = auto.response.replace("{mention}", `@${senderId.split("@")[0]}`);
+            const responseText = `@${senderId.split("@")[0]} ${auto.response}`;
             
             await sock.sendMessage(remoteJid, {
                 text: responseText,
@@ -47,70 +43,9 @@ async function handleAutoResponse(message, remoteJid, senderId, sock) {
     }
 }
 
-
-// 🔹 Daftar Pertanyaan Tebak Logika
-const logicQuestions = [
-    {
-        question:
-            "Aku selalu di depan kamu, tapi kamu tak bisa melihatku. Aku adalah?",
-        answer: "masa depan",
-        clue: "🔎 Sesuatu yang belum terjadi.",
-    },
-    {
-        question:
-            "Aku punya banyak kunci tapi tidak bisa membuka pintu. Aku adalah?",
-        answer: "piano",
-        clue: "🔎 Aku bisa menghasilkan musik.",
-    },
-    {
-        question: "Apa yang bertambah besar ketika kamu ambil darinya?",
-        answer: "lubang",
-        clue: "🔎 Sesuatu yang kosong dan bisa bertambah luas.",
-    },
-    {
-        question:
-            "Semakin banyak kamu mengambilnya, semakin besar aku. Aku adalah?",
-        answer: "nafas",
-        clue: "🔎 Kamu membutuhkanku untuk hidup.",
-    },
-    {
-        question:
-            "Aku tidak punya tangan, tetapi aku bisa menunjuk. Aku adalah?",
-        answer: "jam",
-        clue: "🔎 Aku ada di dinding atau di pergelangan tanganmu.",
-    },
-    {
-        question: "Aku bisa terisi air tapi tetap kering. Aku adalah?",
-        answer: "spons",
-        clue: "🔎 Aku sering dipakai saat mencuci piring.",
-    },
-    {
-        question: "Aku bisa pecah jika kamu menyebut namaku. Aku adalah?",
-        answer: "keheningan",
-        clue: "🔎 Aku ada di tempat yang sunyi.",
-    },
-    {
-        question:
-            "Aku memiliki banyak huruf, tetapi bukan alfabet. Aku adalah?",
-        answer: "kantong surat",
-        clue: "🔎 Aku digunakan untuk mengirim pesan.",
-    },
-    {
-        question: "Aku bisa naik tapi tidak pernah turun. Aku adalah?",
-        answer: "umur",
-        clue: "🔎 Setiap orang mengalaminya.",
-    },
-    {
-        question:
-            "Aku bisa berdiri tanpa kaki dan menangis tanpa mata. Aku adalah?",
-        answer: "lilin",
-        clue: "🔎 Aku sering digunakan saat mati lampu.",
-    },
-];
-
 async function startBot() {
     const { state, saveCreds } =
-        await useMultiFileAuthState("auth_info_baileys");
+    await useMultiFileAuthState("auth_info_baileys");
     const sock = makeWASocket({ auth: state, printQRInTerminal: true });
 
     sock.ev.on("creds.update", saveCreds);
@@ -118,84 +53,81 @@ async function startBot() {
         if (update.connection === "close") startBot();
         else if (update.connection === "open") console.log("✅ Bot siap!");
     });
-
+    
     sock.ev.on("messages.upsert", async (m) => {
-        const msg = m.messages[0];
-        if (!msg.message) return;
-        const remoteJid = msg.key.remoteJid;
-        const sender = msg.key.participant || msg.key.remoteJid;
-        const textMessage =
-            msg.message.conversation || msg.message.extendedTextMessage?.text;
-        if (!textMessage) return;
+      const msg = m.messages[0];
+      if (!msg.message) return;
+      const remoteJid = msg.key.remoteJid;
+      const sender = msg.key.participant || msg.key.remoteJid;
+      const textMessage =
+      msg.message.conversation || msg.message.extendedTextMessage?.text;
+      if (!textMessage) return;
 
-        // Perintah untuk menyalakan/mematikan bot
-        if (textMessage === "!on") {
-            botActive = true;
-            sock.sendMessage(remoteJid, { text: "✅ Bot telah diaktifkan!" });
-            return;
-        } else if (textMessage === "!off") {
-            botActive = false;
-            sock.sendMessage(remoteJid, { text: "❌ Bot telah dimatikan!" });
-            return;
+      // Perintah untuk menyalakan/mematikan bot
+      if (textMessage === "!on") {
+        botActive = true;
+        sock.sendMessage(remoteJid, { text: "✅ Bot telah diaktifkan!" });
+        return;
+      } else if (textMessage === "!off") {
+        botActive = false;
+        sock.sendMessage(remoteJid, { text: "❌ Bot telah dimatikan!" });
+        return;
+      }
+
+      // Jika bot dalam keadaan nonaktif, abaikan semua perintah kecuali !on
+      if (!botActive) return;
+
+      // Periksa apakah ada auto-response yang cocok
+      await handleAutoResponse(textMessage, remoteJid, sender, sock);
+      // Perintah bot yang lain
+      if (textMessage === "!menu") {
+        showMenu(remoteJid, sock);
+      } else if (textMessage === "!ping") {
+        sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
+      } else if (textMessage === "!tagall") {
+        mentionAll(remoteJid, sock);
+      } else if (textMessage === "!jumlahanggota") {
+        countGroupMembers(remoteJid, sock);
+      } else if (textMessage === "!tebakangka") {
+        startGuessingGame(remoteJid, sock);
+      } else if (textMessage.startsWith("!jawab ")) {
+        checkGuess(textMessage, remoteJid, sender, sock);
+      } else if (textMessage === "!tanggal") {
+        sendDate(remoteJid, sock);
+      } else if (textMessage === "!faktaunik") {
+        sendFaktaUnik(remoteJid, sock);
+      } else if (textMessage.startsWith("!quran ")) {
+        getQuranAyat(textMessage, remoteJid, sock);
+      } else if (textMessage === "!tebaklogika") {
+        startLogicGame(remoteJid, sock);
+      } else if (textMessage.startsWith("!jawablogika ")) {
+        checkLogicAnswer(textMessage, remoteJid, sender, sock);
+      } else if (textMessage.startsWith ("!pantun")) {
+        sendPantun(remoteJid, sock);
+      } else if (textMessage.startsWith("!wiki ")) {
+        const query = textMessage.replace("!wiki ", "").trim();
+        if (query) {
+          searchWikipedia(query, remoteJid, sock);
+        } else {
+          sock.sendMessage(remoteJid, {
+            text: "⚠️ Masukkan kata kunci setelah *!wiki* contoh: *!wiki Albert Einstein*",
+          });
         }
-
-        // Jika bot dalam keadaan nonaktif, abaikan semua perintah kecuali !on
-        if (!botActive) return;
-
-        // Perintah bot yang lain
-        if (textMessage === "!menu") {
-    showMenu(remoteJid, sock);
-} else if (textMessage === "!ping") {
-    sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
-} else if (textMessage === "!tagall") {
-    mentionAll(remoteJid, sock);
-} else if (textMessage === "!jumlahanggota") {
-    countGroupMembers(remoteJid, sock);
-} else if (textMessage === "!tebakangka") {
-    startGuessingGame(remoteJid, sock);
-} else if (textMessage.startsWith("!jawab ")) {
-    checkGuess(textMessage, remoteJid, sender, sock);
-} else if (textMessage === "!tanggal") {
-    sendDate(remoteJid, sock);
-} else if (textMessage === "!faktaunik") {
-    sendFaktaUnik(remoteJid, sock);
-} else if (textMessage.startsWith("!quran ")) {
-    getQuranAyat(textMessage, remoteJid, sock);
-} else if (textMessage === "!tebaklogika") {
-    startLogicGame(remoteJid, sock);
-} else if (textMessage.startsWith("!jawablogika ")) {
-    checkLogicAnswer(textMessage, remoteJid, sender, sock);
-} else if (textMessage.startsWith("!ytmp3 ")) {
-    downloadYouTubeMP3(textMessage, remoteJid, sock);
-} else if (textMessage.startsWith("!wiki ")) {
-    const query = textMessage.replace("!wiki ", "").trim();
-    if (query) {
-        searchWikipedia(query, remoteJid, sock);
-    } else {
-        sock.sendMessage(remoteJid, { text: "⚠️ Masukkan kata kunci setelah *!wiki* contoh: *!wiki Albert Einstein*" });
-    }
-} else if (textMessage === "!kluelogika") {
-    giveLogicClue(remoteJid, sock);
-} else if (textMessage.startsWith("!hitung ")) { 
-    try {
-        const expression = textMessage.replace("!hitung", "").trim();
-        const result = math.evaluate(expression);
-        await sock.sendMessage(remoteJid, { text: `Hasil: ${result}` });
-    } catch (error) {
-        await sock.sendMessage(remoteJid, { text: "⚠️ Format salah! Contoh: `!hitung 5+3*2`" });
-    }
-} else if (textMessage.startsWith("!translate ")) {
-    translateText(textMessage, remoteJid, sock);
-}
-        else {
-            // Auto-responder unik
-            const foundResponse = autoResponses.find((r) =>
-                textMessage.toLowerCase().includes(r.keyword),
-            );
-            if (foundResponse) {
-                sock.sendMessage(remoteJid, { text: foundResponse.response });
-            }
+      } else if (textMessage === "!kluelogika") {
+        giveLogicClue(remoteJid, sock);
+      } else if (textMessage.startsWith("!hitung ")) {
+        try {
+          const expression = textMessage.replace("!hitung", "").trim();
+          const result = math.evaluate(expression);
+          await sock.sendMessage(remoteJid, { text: `Hasil: ${result}` });
+        } catch (error) {
+          await sock.sendMessage(remoteJid, {
+            text: "⚠️ Format salah! Contoh: `!hitung 5+3*2`",
+          });
         }
+      } else if (textMessage.startsWith("!translate ")) {
+        translateText(textMessage, remoteJid, sock);
+      } else "Pilihan yang anda inginkan belum tersedia";
     });
 }
 
@@ -242,8 +174,6 @@ Selamat bersenang-senang! 🎉
     `;
     sock.sendMessage(from, { text: menuText });
 };
-
-
 
 //Translate
 async function translateText(textMessage, remoteJid, sock) {
@@ -322,7 +252,6 @@ const searchWikipedia = async (query, from, sock) => {
     }
 };
 
-
 // 🔹 Fungsi untuk menghitung jumlah anggota grup
 const countGroupMembers = async (from, sock) => {
     try {
@@ -394,60 +323,8 @@ const sendDate = (from, sock) => {
 
 // 🔹 Fungsi untuk mengirimkan fakta unik dengan sumber referensi
 const sendFaktaUnik = (from, sock) => {
-    const faktaList = [
-        "💡 Otak manusia dapat menyimpan sekitar 2,5 petabyte informasi. (Scientific American, 2023)",
-        "💡 Lebah bisa mengenali wajah manusia! (Journal of Experimental Biology, 2021)",
-        "💡 Tidur kurang dari 6 jam sehari dapat menurunkan daya tahan tubuh. (National Sleep Foundation, 2024)",
-        "💡 Jantung manusia berdetak lebih dari 100.000 kali sehari. (American Heart Association, 2022)",
-        "💡 Air panas bisa membeku lebih cepat daripada air dingin, ini disebut efek Mpemba. (Physics World, 2023)",
-        "💡 Jerapah hanya tidur sekitar 30 menit sehari dalam keadaan berdiri. (Smithsonian National Zoo, 2022)",
-        "💡 Sidik jari koala sangat mirip dengan manusia hingga bisa membingungkan forensik. (Australian Koala Foundation, 2025)",
-        "💡 Planet Venus berputar searah jarum jam, berbeda dari planet lain di tata surya. (NASA, 2024)",
-        "💡 Manusia berbagi sekitar 60% DNA dengan pisang. (National Human Genome Research Institute, 2023)",
-        "💡 Air liur manusia bisa mengurai makanan lebih cepat daripada asam baterai. (Journal of Oral Biosciences, 2022)",
-        "💡 Zebra tidak memiliki warna putih dengan garis hitam, melainkan hitam dengan garis putih. (National Geographic, 2024)",
-        "💡 Jika kita bisa mendengar suara di luar angkasa, matahari akan bersuara seperti deru mesin jet. (NASA, 2023)",
-        "💡 Kucing memiliki tulang selangka yang tidak terhubung ke tulang lain, memungkinkan mereka masuk ke ruang sempit. (Smithsonian, 2024)",
-        "💡 Pisang secara teknis adalah buah beri, tetapi stroberi bukan. (Botanical Science Journal, 2023)",
-        "💡 Air mata manusia mengandung hormon yang bisa mengurangi stres saat menangis. (Harvard Medical School, 2023)",
-        "💡 Hiu sudah ada di bumi lebih lama daripada pohon! Mereka muncul sekitar 400 juta tahun yang lalu. (Paleontology Journal, 2024)",
-        "💡 Cahaya dari matahari membutuhkan sekitar 8 menit 20 detik untuk mencapai bumi. (NASA, 2024)",
-        "💡 Ubur-ubur Turritopsis dohrnii dikenal sebagai ‘makhluk abadi’ karena bisa kembali ke tahap polip. (Marine Biology Research, 2023)",
-        "💡 Madu adalah satu-satunya makanan yang tidak akan pernah basi, bahkan setelah ribuan tahun. (National Honey Board, 2023)",
-        "💡 Pulau Paskah memiliki patung kepala raksasa, dan ternyata mereka memiliki tubuh di bawah tanah. (Archaeology Journal, 2022)",
-        "💡 Gajah bisa mengenali diri mereka sendiri di cermin, menunjukkan tanda-tanda kesadaran diri. (Animal Cognition Journal, 2023)",
-        "💡 Lumba-lumba memberi nama satu sama lain dengan peluit unik. (Marine Mammal Science, 2024)",
-        "💡 Bekicot bisa tidur hingga tiga tahun dalam kondisi ekstrem. (Biology Letters, 2023)",
-        "💡 Ada lebih banyak bintang di alam semesta daripada butiran pasir di semua pantai di bumi. (NASA, 2024)",
-        "💡 Kecepatan bersin manusia bisa mencapai lebih dari 160 km/jam. (Medical News Today, 2023)",
-        "💡 Jantung paus biru sebesar mobil kecil dan detaknya bisa terdengar dari 3 km jauhnya. (National Geographic, 2024)",
-        "💡 Seekor gurita memiliki tiga jantung dan darahnya berwarna biru. (Marine Science Journal, 2023)",
-        "💡 Bunga matahari bisa 'melihat' matahari dan bergerak mengikutinya sepanjang hari. (Botanical Review, 2024)",
-        "💡 Listrik dari satu kilat bisa menyalakan lampu bohlam selama sekitar tiga bulan. (Weather Science, 2023)",
-        "💡 Rasa gravitasi di puncak Gunung Everest lebih lemah dibandingkan di permukaan laut. (Geophysics Journal, 2024)",
-        "💡 Katak bisa menelan makanan dengan menggunakan matanya untuk mendorong makanan ke dalam tenggorokan. (Zoology Research, 2023)",
-        "💡 Siput memiliki ribuan gigi kecil dan bisa menggiling makanan dengan rahangnya. (Journal of Molluscan Studies, 2024)",
-        "💡 Gunung berapi terbesar di tata surya adalah Olympus Mons di Mars, yang tiga kali lebih tinggi dari Gunung Everest. (NASA, 2023)",
-        "💡 Setiap tahun, tubuh manusia mengganti hampir seluruh selnya, artinya kita seperti ‘orang baru’ setiap 7-10 tahun. (Science Journal, 2024)",
-        "💡 Kupu-kupu bisa merasakan rasa dengan kaki mereka. (Entomology Research, 2023)",
-        "💡 Air di bumi sudah ada selama lebih dari 4 miliar tahun, lebih tua dari matahari. (Geological Society, 2024)",
-        "💡 Popcorn bisa meledak karena memiliki air di dalamnya yang menguap saat dipanaskan. (Food Science Journal, 2023)",
-        "💡 Beruang kutub memiliki kulit hitam di bawah bulu putihnya untuk menyerap lebih banyak panas. (Arctic Research, 2024)",
-        "💡 Planet Saturnus bisa mengapung di air jika ada kolam cukup besar, karena densitasnya lebih rendah dari air. (NASA, 2024)",
-        "💡 Burung hantu tidak bisa menggerakkan bola matanya, jadi mereka memutar kepala hingga 270 derajat untuk melihat sekeliling. (Ornithology Journal, 2023)",
-        "💡 Bayi hiu terkadang memakan saudaranya sendiri sebelum lahir dalam rahim ibu mereka. (Marine Biology Research, 2024)",
-        "💡 Semut bisa mengangkat beban 50 kali lebih berat dari tubuhnya. (Entomology Journal, 2023)",
-        "💡 Buaya tidak bisa menjulurkan lidahnya karena lidahnya melekat ke langit-langit mulut. (Zoological Journal, 2024)",
-        "💡 Burung kolibri adalah satu-satunya burung yang bisa terbang mundur. (Bird Science, 2023)",
-        "💡 Tikus bisa tertawa ketika mereka digelitik. (Animal Behavior Research, 2024)",
-        "💡 Ada spesies ikan yang bisa berjalan di darat, salah satunya adalah ikan paru-paru (lungfish). (Marine Science, 2023)",
-    ];
-
-    // Pilih fakta secara acak
-    const randomFakta = faktaList[Math.floor(Math.random() * faktaList.length)];
-
-    // Kirim fakta unik ke pengguna
-    sock.sendMessage(from, { text: randomFakta });
+  const randomFakta = getRandomFakta();
+  sock.sendMessage(from, { text: randomFakta });
 };
 
 // 🔹 Fungsi untuk Memulai Tebak Logika
@@ -547,5 +424,16 @@ const getQuranAyat = async (message, from, sock) => {
         console.error(error);
     }
 };
+
+// Fungsi untuk mengirimkan pantun
+const sendPantun = (from, sock) => {
+    const randomPantun = pantunList[Math.floor(Math.random() * pantunList.length)];
+    
+    // Format pantun dalam bentuk teks
+    const pantunText = `🎭 *Pantun untukmu!* 🎭\n\n${randomPantun.baris1}\n${randomPantun.baris2}\n${randomPantun.baris3}\n${randomPantun.baris4}`;
+
+    // Kirim pantun ke pengguna
+    sock.sendMessage(from, { text: pantunText });
+}
 
 startBot();

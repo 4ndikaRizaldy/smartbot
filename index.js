@@ -59,6 +59,8 @@ async function startBot() {
     const textMessage =
       msg.message.conversation || msg.message.extendedTextMessage?.text;
     if (!textMessage) return;
+    // **Filter agar bot tidak merespons dirinya sendiri**
+    if (msg.key.fromMe) return;
 
     // Perintah untuk menyalakan/mematikan bot
     if (textMessage === "!on") {
@@ -954,6 +956,18 @@ const saveResponses = (data) => {
 const responses = loadResponses();
 
 async function handleLearning(textMessage, remoteJid, sender, sock) {
+  // **Memuat daftar guru dari database**
+  const teachers = loadTeachers();
+  const senderNumber = sender.replace(/[^0-9]/g, "");
+
+  // **Cek apakah pengirim adalah guru**
+  if (!teachers.includes(senderNumber)) {
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Kamu bukan guru! Hanya guru yang bisa mengajarkan bot.",
+    });
+    return;
+  }
+
   if (textMessage.startsWith("!ajarin ")) {
     const content = textMessage.replace("!ajarin ", "").trim();
     const [question, answer] = content.split(" = ");
@@ -973,6 +987,7 @@ async function handleLearning(textMessage, remoteJid, sender, sock) {
     });
   }
 }
+
 
 async function handleCustomResponse(textMessage, remoteJid, sock) {
   const response = responses[textMessage.toLowerCase()];

@@ -956,19 +956,18 @@ const saveResponses = (data) => {
 const responses = loadResponses();
 
 async function handleLearning(textMessage, remoteJid, sender, sock) {
-  // **Memuat daftar guru dari database**
-  const teachers = loadTeachers();
-  const senderNumber = sender.replace(/[^0-9]/g, "");
-
-  // **Cek apakah pengirim adalah guru**
-  if (!teachers.includes(senderNumber)) {
-    await sock.sendMessage(remoteJid, {
-      text: "⚠️ Kamu bukan guru! Hanya guru yang bisa mengajarkan bot.",
-    });
-    return;
-  }
-
   if (textMessage.startsWith("!ajarin ")) {
+    const teachers = loadTeachers();
+    const senderNumber = sender.replace(/[^0-9]/g, "");
+
+    // **Cek apakah pengirim adalah guru**
+    if (!teachers.includes(senderNumber)) {
+      await sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu bukan guru! Hanya guru yang bisa mengajarkan bot.",
+      });
+      return;
+    }
+
     const content = textMessage.replace("!ajarin ", "").trim();
     const [question, answer] = content.split(" = ");
 
@@ -987,6 +986,7 @@ async function handleLearning(textMessage, remoteJid, sender, sock) {
     });
   }
 }
+
 
 
 async function handleCustomResponse(textMessage, remoteJid, sock) {

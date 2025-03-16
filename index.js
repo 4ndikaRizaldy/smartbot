@@ -113,8 +113,7 @@ async function startBot() {
       textMessage.startsWith("!setgremind ")
     ) {
       setReminder(textMessage, remoteJid, sender, sock, true);
-    }
- else if (textMessage === "!listremind") {
+    } else if (textMessage === "!listremind") {
       listReminders(remoteJid, sock);
     } else if (textMessage.startsWith("!cancelremind ")) {
       cancelReminder(textMessage, remoteJid, sock);
@@ -129,7 +128,6 @@ async function startBot() {
         sock,
         textMessage.startsWith("!repeatgremind ")
       );
-
     } else if (textMessage.startsWith("!stoprepeat")) {
       stopRepeatReminder(remoteJid, sender, sock);
     } else if (textMessage === "!motivasi") {
@@ -178,6 +176,7 @@ async function startBot() {
     } else "Pilihan yang anda inginkan belum tersedia";
   });
 }
+
 
 // 🔹 Fungsi untuk menampilkan menu
 const showMenu = (from, sock) => {
@@ -237,7 +236,7 @@ async function translateText(textMessage, remoteJid, sock) {
     const args = textMessage.split(" ");
     if (args.length < 3) {
       await sock.sendMessage(remoteJid, {
-        text: "⚠️ Format salah! Contoh: `!translate en Halo dunia`",
+        text: "⚠️ Format salah! Contoh: `!translate en Halo dunia. Apa kabar?`",
       });
       return;
     }
@@ -253,9 +252,21 @@ async function translateText(textMessage, remoteJid, sock) {
       return;
     }
 
-    const result = await translate(text, { to: lang });
+    // Pecah teks menjadi kalimat berdasarkan tanda baca
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+
+    // Terjemahkan setiap kalimat secara terpisah
+    const translatedSentences = await Promise.all(
+      sentences.map(async (sentence) => {
+        const result = await translate(sentence.trim(), { to: lang });
+        return result.text;
+      })
+    );
+
+    const translatedText = translatedSentences.join(" "); // Gabungkan hasil terjemahan
+
     await sock.sendMessage(remoteJid, {
-      text: `🔄 Terjemahan (${lang}): ${result.text}`,
+      text: `🔄 Terjemahan (${lang}): ${translatedText}`,
     });
   } catch (error) {
     console.error("Error saat menerjemahkan:", error);
@@ -265,16 +276,16 @@ async function translateText(textMessage, remoteJid, sock) {
   }
 }
 
-const mentionAll = async (from, sock, customMessage = "👥 Mention All:") => {
+// Tag Semua Orang
+const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
   try {
     const groupMetadata = await sock.groupMetadata(from);
     const participants = groupMetadata.participants.map((p) => p.id);
 
     await sock.sendMessage(from, {
-      text: `${customMessage}\n\n${participants
-        .map((id) => `@${id.split("@")[0]}`)
-        .join(" ")}`,
-      mentions: participants,
+      text: `*${customMessage}*`, // Hanya menampilkan pesan tanpa nama yang terlihat
+      mentions: participants, // Tetap mention semua anggota secara tersembunyi
+      contextInfo: { mentionedJid: participants }, // Mengaktifkan mention tersembunyi
     });
   } catch {
     sock.sendMessage(from, {
@@ -282,6 +293,7 @@ const mentionAll = async (from, sock, customMessage = "👥 Mention All:") => {
     });
   }
 };
+
 
 // 🔹 Fungsi untuk mencari ringkasan artikel Wikipedia
 const searchWikipedia = async (query, from, sock) => {
@@ -547,7 +559,6 @@ async function shortLink(url, remoteJid, sock) {
 const fs = require("fs");
 const remindersFile = "reminders.json";
 let repeatReminders = {};
-const reminders = [];
 
 
 // Fungsi untuk memuat reminder dari file
@@ -758,48 +769,7 @@ const stopRepeatReminder = (remoteJid, sender, sock) => {
   }
 };
 
-// Fungsi untuk mengecek reminder dan mengirim pesan saat waktunya tiba
-const checkReminder = async (sock) => {
-  setInterval(async () => {
-    const now = moment().tz("Asia/Jakarta"); // Ubah ke zona waktu server
-    const currentDay = now.format("dddd").toLowerCase();
-    const currentTime = now.format("HH:mm");
-    const todayFormatted = now.format("DD-MM-YYYY");
-
-    const reminders = loadReminders();
-    for (const reminder of reminders) {
-      const reminderTime = moment.tz(
-        `${reminder.date || ""} ${reminder.time}`,
-        "DD-MM-YYYY HH:mm",
-        reminder.timezone
-      );
-
-      if (
-        (reminder.days &&
-          reminder.days.includes(currentDay) &&
-          reminder.time === currentTime) ||
-        (reminder.date && reminder.date === todayFormatted)
-      ) {
-        const targetJid = reminder.isGroup ? reminder.groupId : remoteJid;
-
-        if (reminder.isGroup) {
-          const groupMetadata = await sock.groupMetadata(reminder.groupId);
-          const participants = groupMetadata.participants.map((p) => p.id);
-
-          await sock.sendMessage(reminder.groupId, {
-            text: `🔔 *Reminder Waktu!* ${reminder.message}`,
-            mentions: participants,
-          });
-        } else {
-          await sock.sendMessage(targetJid, {
-            text: `🔔 *Reminder Waktu!* ${reminder.message}`,
-          });
-        }
-      }
-    }
-  }, 60000); // Cek setiap 1 menit
-};
-
+// Buat QR Code
 const QRCode = require("qrcode");
 
 async function generateQRCode(text, remoteJid, sock) {

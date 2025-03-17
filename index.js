@@ -258,6 +258,11 @@ async function startBot() {
     } else if (textMessage.startsWith("!announce ")) {
       const messageContent = textMessage.replace("!announce ", "").trim();
       await announceToAll(remoteJid, sender, sock, messageContent);
+    } else if (textMessage.startsWith("!kritik ")) {
+      const messageContent = textMessage.replace("!kritik ", "").trim();
+      await submitFeedback(remoteJid, sender, sock, messageContent);
+    } else if (textMessage === "!lihatkritik") {
+      await viewFeedback(remoteJid, sender, sock);
     } else "Pilihan yang anda inginkan belum tersedia";
   });
 
@@ -1288,7 +1293,6 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
   }
 }
 
-
 async function announceToAll(remoteJid, sender, sock, message) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);
@@ -1312,6 +1316,74 @@ async function announceToAll(remoteJid, sender, sock, message) {
   } catch (error) {
     console.error("Error sending announcement:", error);
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengirim pengumuman." });
+  }
+}
+
+//feedback
+const feedbackFile = "feedback.json";
+
+// Fungsi untuk membaca data feedback
+function readFeedback() {
+  try {
+    const data = fs.readFileSync(feedbackFile);
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+}
+
+// Fungsi untuk menyimpan kritik & saran
+function saveFeedback(feedback) {
+  const feedbackList = readFeedback();
+  feedbackList.push(feedback);
+  fs.writeFileSync(feedbackFile, JSON.stringify(feedbackList, null, 2));
+}
+
+// Fungsi untuk menerima kritik & saran dari anggota grup
+async function submitFeedback(remoteJid, sender, sock, message) {
+  try {
+    const feedback = {
+      sender: sender.replace("@s.whatsapp.net", ""),
+      message: message,
+      timestamp: new Date().toISOString(),
+    };
+
+    saveFeedback(feedback);
+
+    sock.sendMessage(remoteJid, {
+      text: "✅ Terima kasih! Kritik & saran kamu sudah disimpan.",
+    });
+  } catch (error) {
+    console.error("Error submitting feedback:", error);
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal menyimpan kritik & saran." });
+  }
+}
+
+
+// Fungsi untuk melihat daftar kritik & saran
+async function viewFeedback(remoteJid, sender, sock) {
+  try {
+    const feedbackList = readFeedback();
+
+    if (feedbackList.length === 0) {
+      return sock.sendMessage(remoteJid, {
+        text: "📭 Belum ada kritik & saran yang masuk.",
+      });
+    }
+
+    let response = "📋 *Daftar Kritik & Saran:*\n\n";
+    feedbackList.forEach((feedback, index) => {
+      response += `${index + 1}. *${feedback.message}*\n   _Dari: ${
+        feedback.sender
+      }_\n\n`;
+    });
+
+    sock.sendMessage(remoteJid, { text: response });
+  } catch (error) {
+    console.error("Error viewing feedback:", error);
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Gagal menampilkan kritik & saran.",
+    });
   }
 }
 

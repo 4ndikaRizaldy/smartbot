@@ -167,9 +167,6 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
           text: "⚠️ Masukkan URL setelah *!shortlink* contoh: *!shortlink https://example.com*",
         });
       }
-    } // Pengecekan perintah
-    else if (textMessage === "!removebg") {
-      await handleRemoveBg(sock, msg);
     } else if (textMessage.startsWith("!wiki ")) {
       const query = textMessage.replace("!wiki ", "").trim();
       if (query) {
@@ -1438,46 +1435,7 @@ async function viewFeedback(remoteJid, sender, sock) {
   }
 }
 
-const { removeBackground } = require("rembg-node");
-
-async function handleRemoveBg(sock, msg) {
-  const remoteJid = msg.key.remoteJid;
-
-  // Cek apakah ada gambar yang dikirim
-  const imageMessage = msg.message.imageMessage;
-  if (!imageMessage) {
-    sock.sendMessage(remoteJid, {
-      text: "⚠️ Kirim gambar dengan caption *!removebg*",
-    });
-    return;
-  }
-
-  // Unduh gambar dari pesan
-  const buffer = await sock.downloadMediaMessage(msg);
-  fs.writeFileSync("input.png", buffer); // Simpan gambar sementara
-
-  try {
-    // Hapus background menggunakan rembg-node
-    const result = await removeBackground(buffer);
-
-    // Simpan hasil gambar
-    fs.writeFileSync("output.png", result);
-
-    // Kirim hasil gambar tanpa background ke user
-    await sock.sendMessage(remoteJid, {
-      image: fs.readFileSync("output.png"),
-      caption: "✨ Background berhasil dihapus!",
-    });
-
-    // Hapus file sementara setelah selesai
-    fs.unlinkSync("input.png");
-    fs.unlinkSync("output.png");
-  } catch (error) {
-    console.error("❌ Error saat menghapus background:", error);
-    sock.sendMessage(remoteJid, { text: "❌ Gagal menghapus background!" });
-  }
-}
-
+// Auto Download
 
 
 startBot();

@@ -73,10 +73,6 @@ const autoResponses = [
     keyword: "smartbot!",
     response: "Aku siap membantu! Mau lihat fiturku? Coba ketik *!menu* 🤖",
   },
-  {
-    keyword: "sakit",
-    response: "Semoga lekas sembuh yaaaa 🤗, jaga pola makan dan tidur",
-  },
 ];
 
 // 🔹 Daftar Pertanyaan Tebak Logika
@@ -338,6 +334,7 @@ const getRandomFakta = () => {
   return faktaList[Math.floor(Math.random() * faktaList.length)];
 };
 
+// Daftar Pantun
 const pantunList = [
   {
     baris1: "Pergi ke pasar beli durian,",

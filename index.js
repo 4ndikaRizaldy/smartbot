@@ -237,7 +237,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !ping ➝ 🏓 Mengecek apakah bot aktif
 🔹 !jumlahanggota ➝ 👥 Menampilkan jumlah anggota grup
 🔹 !shortlink [URL] ➝ 🔗 Memperpendek link
-🔹 !qrcode ➝   𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃 Membuat Barcode
+🔹 !qrcode ➝ 📷 Membuat Barcode
 
 🎮 *PERMAINAN & TEBAK-TEBAKAN*
 🔹 !tebakangka ➝ 🎲 Mulai permainan tebak angka (1-10)
@@ -269,13 +269,32 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !repeatgremind [waktu] [pesan] ➝ 🔁 Setel pengingat grup berulang
 🔹 !stoprepeat ➝ ⛔ Hentikan pengingat berulang
 
-👥 *GRUP & INTERAKSI*
+👨‍🏫 *MANAJEMEN GURU*
+🔹 !tambahguru [nomor] ➝ ✍️ Menambahkan nomor guru
+🔹 !listguru ➝ 📜 Melihat daftar guru
+🔹 !hapusguru [nomor] ➝ ❌ Menghapus guru
+
+📖 *MANAJEMEN AUTO-RESPONSE*
+🔹 !ajarin [pertanyaan] = [jawaban] ➝ 🤖 Mengajarkan bot auto-response
+🔹 !listajarin [halaman] ➝ 📖 Melihat daftar pertanyaan yang sudah diajarkan
+🔹 !hapusajarin [pertanyaan] ➝ 🗑 Menghapus auto-response
+
+👥 *GRUP & ADMIN*
 🔹 !tagall [pesan opsional] ➝ 📢 Mention semua anggota grup
+🔹 !bukagrup ➝ 🔓 Membuka grup
+🔹 !tutupgrup ➝ 🔒 Menutup grup
+🔹 !jadwalbuka [jam] ➝ ⏰ Setel jadwal buka grup
+🔹 !jadwaltutup [jam] ➝ ⏰ Setel jadwal tutup grup
+🔹 !cekjadwal ➝ 📆 Cek jadwal buka/tutup grup
+🔹 !add [nomor] ➝ ➕ Menambahkan anggota ke grup
+🔹 !remove [nomor] ➝ 🚪 Mengeluarkan anggota dari grup
 
 💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
   `;
+
   sock.sendMessage(from, { text: menuText });
 };
+
 
 
 //Translate

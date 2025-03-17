@@ -8,7 +8,6 @@ const axios = require("axios");
 const math = require("mathjs");
 const translate = require("google-translate-api-x");
 
-
 const {
   validLanguages,
   autoResponses,
@@ -45,12 +44,14 @@ async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
   const sock = makeWASocket({ auth: state, printQRInTerminal: true });
 
+  // Event handler untuk koneksi dan kredensial
   sock.ev.on("creds.update", saveCreds);
   sock.ev.on("connection.update", (update) => {
     if (update.connection === "close") startBot();
     else if (update.connection === "open") console.log("✅ Bot siap!");
   });
 
+  // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
     if (!msg.message) return;
@@ -76,14 +77,17 @@ async function startBot() {
     // Jika bot dalam keadaan nonaktif, abaikan semua perintah kecuali !on
     if (!botActive) return;
 
-    // Periksa apakah ada auto-response yang cocok
+    // Penanganan respons otomatis (auto-response)
     await handleAutoResponse(textMessage, remoteJid, sender, sock);
+
+    // Penanganan pembelajaran dan respons kustom
     await handleLearning(textMessage, remoteJid, sender, sock);
     await handleCustomResponse(textMessage, remoteJid, sock);
-    // Panggil fungsi untuk menangani perintah guru
+
+    // Penanganan perintah guru (jika ada)
     await handleTeacherCommands(textMessage, remoteJid, sender, sock);
 
-    // Perintah bot yang lain
+    // Penanganan perintah umum dan utilitas
     if (textMessage === "!menu") {
       showMenu(remoteJid, sock);
     } else if (textMessage === "!ping") {
@@ -94,49 +98,10 @@ async function startBot() {
       mentionAll(remoteJid, sock, customMessage);
     } else if (textMessage === "!jumlahanggota") {
       countGroupMembers(remoteJid, sock);
-    } else if (textMessage === "!tebakangka") {
-      startGuessingGame(remoteJid, sock);
-    } else if (textMessage.startsWith("!jawab ")) {
-      checkGuess(textMessage, remoteJid, sender, sock);
     } else if (textMessage === "!tanggal") {
       sendDate(remoteJid, sock);
     } else if (textMessage === "!faktaunik") {
       sendFaktaUnik(remoteJid, sock);
-    } else if (textMessage.startsWith("!quran ")) {
-      getQuranAyat(textMessage, remoteJid, sock);
-    } else if (textMessage === "!tebaklogika") {
-      startLogicGame(remoteJid, sock);
-    } else if (textMessage.startsWith("!jlogika ")) {
-      checkLogicAnswer(textMessage, remoteJid, sender, sock);
-    } else if (textMessage.startsWith("!pantun")) {
-      sendPantun(remoteJid, sock);
-    } else if (
-      textMessage.startsWith("!remind ") ||
-      textMessage.startsWith("!setremind ")
-    ) {
-      setReminder(textMessage, remoteJid, sender, sock, false);
-    } else if (
-      textMessage.startsWith("!gremind ") ||
-      textMessage.startsWith("!setgremind ")
-    ) {
-      setReminder(textMessage, remoteJid, sender, sock, true);
-    } else if (textMessage === "!listremind") {
-      listReminders(remoteJid, sock);
-    } else if (textMessage.startsWith("!cancelremind ")) {
-      cancelReminder(textMessage, remoteJid, sock);
-    } else if (
-      textMessage.startsWith("!repeatremind ") ||
-      textMessage.startsWith("!repeatgremind ")
-    ) {
-      setRepeatReminder(
-        textMessage,
-        remoteJid,
-        sender,
-        sock,
-        textMessage.startsWith("!repeatgremind ")
-      );
-    } else if (textMessage.startsWith("!stoprepeat")) {
-      stopRepeatReminder(remoteJid, sender, sock);
     } else if (textMessage === "!motivasi") {
       sendMotivation(remoteJid, sock);
     } else if (textMessage.startsWith("!qrcode ")) {
@@ -166,8 +131,6 @@ async function startBot() {
           text: "⚠️ Masukkan kata kunci setelah *!wiki* contoh: *!wiki Albert Einstein*",
         });
       }
-    } else if (textMessage === "!kluelogika") {
-      giveLogicClue(remoteJid, sock);
     } else if (textMessage.startsWith("!hitung ")) {
       try {
         const expression = textMessage.replace("!hitung", "").trim();
@@ -178,15 +141,68 @@ async function startBot() {
           text: "⚠️ Format salah! Contoh: `!hitung 5+3*2`",
         });
       }
-    } else if (textMessage.startsWith("!listajarin")) {
+    } else if (textMessage.startsWith("!translate ")) {
+      translateText(textMessage, remoteJid, sock);
+    }
+
+    // Penanganan permainan (games)
+    else if (textMessage === "!tebaklogika") {
+      startLogicGame(remoteJid, sock);
+    } else if (textMessage.startsWith("!jlogika ")) {
+      checkLogicAnswer(textMessage, remoteJid, sender, sock);
+    } else if (textMessage === "!kluelogika") {
+      giveLogicClue(remoteJid, sock);
+    } else if (textMessage === "!tebakangka") {
+      startGuessingGame(remoteJid, sock);
+    } else if (textMessage.startsWith("!jawab ")) {
+      checkGuess(textMessage, remoteJid, sender, sock);
+    } else if (textMessage.startsWith("!quran ")) {
+      getQuranAyat(textMessage, remoteJid, sock);
+    } else if (textMessage.startsWith("!pantun")) {
+      sendPantun(remoteJid, sock);
+    }
+
+    // Penanganan pengingat (reminder)
+    else if (
+      textMessage.startsWith("!remind ") ||
+      textMessage.startsWith("!setremind ")
+    ) {
+      setReminder(textMessage, remoteJid, sender, sock, false);
+    } else if (
+      textMessage.startsWith("!gremind ") ||
+      textMessage.startsWith("!setgremind ")
+    ) {
+      setReminder(textMessage, remoteJid, sender, sock, true);
+    } else if (textMessage === "!listremind") {
+      listReminders(remoteJid, sock);
+    } else if (textMessage.startsWith("!cancelremind ")) {
+      cancelReminder(textMessage, remoteJid, sock);
+    } else if (
+      textMessage.startsWith("!repeatremind ") ||
+      textMessage.startsWith("!repeatgremind ")
+    ) {
+      setRepeatReminder(
+        textMessage,
+        remoteJid,
+        sender,
+        sock,
+        textMessage.startsWith("!repeatgremind ")
+      );
+    } else if (textMessage.startsWith("!stoprepeat")) {
+      stopRepeatReminder(remoteJid, sender, sock);
+    }
+
+    // Penanganan pembelajaran (learning)
+    else if (textMessage.startsWith("!listajarin")) {
       const args = textMessage.split(" ");
       const page = args.length > 1 ? parseInt(args[1], 10) : 1;
       await listLearnedResponses(remoteJid, sock, page);
     } else if (textMessage.startsWith("!hapusajarin ")) {
       await deleteLearnedResponse(textMessage, remoteJid, sock);
-    } else if (textMessage.startsWith("!translate ")) {
-      translateText(textMessage, remoteJid, sock);
-    } else if (textMessage === "!bukagrup") {
+    }
+
+    // Penanganan grup
+    else if (textMessage === "!bukagrup") {
       await setGroupRestriction(remoteJid, sock, false);
     } else if (textMessage === "!tutupgrup") {
       await setGroupRestriction(remoteJid, sock, true);
@@ -219,12 +235,31 @@ async function startBot() {
         .trim()
         .split(" ");
       await removeMultipleMembers(remoteJid, sender, sock, phoneNumbers);
+    } else if (textMessage.startsWith("!promote ")) {
+      const mentionedJid =
+        msg.message.extendedTextMessage?.contextInfo?.mentionedJid;
+      if (mentionedJid) {
+        await promoteMember(remoteJid, sender, sock, mentionedJid);
+      } else {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Tag anggota yang ingin dipromote!",
+        });
+      }
+    } else if (textMessage.startsWith("!demote ")) {
+      const mentionedJid =
+        msg.message.extendedTextMessage?.contextInfo?.mentionedJid;
+      if (mentionedJid) {
+        await demoteMember(remoteJid, sender, sock, mentionedJid);
+      } else {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Tag admin yang ingin didemote!",
+        });
+      }
     } else "Pilihan yang anda inginkan belum tersedia";
   });
 
   checkGroupSchedule(sock); // Mulai cek jadwal otomatis
 }
-
 
 // 🔹 Fungsi untuk menampilkan menu
 const showMenu = (from, sock) => {
@@ -295,8 +330,6 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
   sock.sendMessage(from, { text: menuText });
 };
 
-
-
 //Translate
 async function translateText(textMessage, remoteJid, sock) {
   try {
@@ -360,7 +393,6 @@ const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
     });
   }
 };
-
 
 // 🔹 Fungsi untuk mencari ringkasan artikel Wikipedia
 const searchWikipedia = async (query, from, sock) => {
@@ -627,7 +659,6 @@ const fs = require("fs");
 const remindersFile = "reminders.json";
 let repeatReminders = {};
 
-
 // Fungsi untuk memuat reminder dari file
 const loadReminders = () => {
   if (fs.existsSync(remindersFile)) {
@@ -734,13 +765,21 @@ const setReminder = (textMessage, remoteJid, sender, sock, isGroup = false) => {
 const listReminders = (remoteJid, sock) => {
   const reminders = loadReminders();
   if (reminders.length === 0) {
-    sock.sendMessage(remoteJid, { text: "📌 Tidak ada reminder yang tersimpan." });
+    sock.sendMessage(remoteJid, {
+      text: "📌 Tidak ada reminder yang tersimpan.",
+    });
     return;
   }
 
   let message = "📌 *Daftar Reminder:*\n";
   reminders.forEach((reminder, index) => {
-    message += `\n*${index + 1}.* 📅 ${reminder.date ? `Tanggal: ${reminder.date}` : `Hari: ${reminder.days.join(", ")}`}\n🕒 Jam: ${reminder.time}\n📢 Pesan: ${reminder.message}\n📍 ${reminder.isGroup ? "Grup" : "Pribadi"}\n`;
+    message += `\n*${index + 1}.* 📅 ${
+      reminder.date
+        ? `Tanggal: ${reminder.date}`
+        : `Hari: ${reminder.days.join(", ")}`
+    }\n🕒 Jam: ${reminder.time}\n📢 Pesan: ${reminder.message}\n📍 ${
+      reminder.isGroup ? "Grup" : "Pribadi"
+    }\n`;
   });
 
   sock.sendMessage(remoteJid, { text: message });
@@ -750,7 +789,9 @@ const listReminders = (remoteJid, sock) => {
 const cancelReminder = (textMessage, remoteJid, sock) => {
   const args = textMessage.split(" ");
   if (args.length < 2) {
-    sock.sendMessage(remoteJid, { text: "⚠️ Gunakan format *!cancelremind <ID>*" });
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Gunakan format *!cancelremind <ID>*",
+    });
     return;
   }
 
@@ -758,14 +799,18 @@ const cancelReminder = (textMessage, remoteJid, sock) => {
   let reminders = loadReminders();
 
   if (id < 0 || id >= reminders.length) {
-    sock.sendMessage(remoteJid, { text: `⚠️ Reminder dengan ID *${args[1]}* tidak ditemukan!` });
+    sock.sendMessage(remoteJid, {
+      text: `⚠️ Reminder dengan ID *${args[1]}* tidak ditemukan!`,
+    });
     return;
   }
 
   reminders.splice(id, 1);
   saveReminders(reminders);
 
-  sock.sendMessage(remoteJid, { text: `✅ Reminder *${args[1]}* telah dihapus!` });
+  sock.sendMessage(remoteJid, {
+    text: `✅ Reminder *${args[1]}* telah dihapus!`,
+  });
 };
 
 // Fungsi untuk membuat reminder berulang
@@ -859,7 +904,6 @@ async function generateQRCode(text, remoteJid, sock) {
     });
   }
 }
-
 
 //Ajrin Bot
 
@@ -1006,8 +1050,6 @@ async function handleLearning(textMessage, remoteJid, sender, sock) {
   }
 }
 
-
-
 async function handleCustomResponse(textMessage, remoteJid, sock) {
   const response = responses[textMessage.toLowerCase()];
   if (response) {
@@ -1132,7 +1174,8 @@ async function isUserAdmin(remoteJid, senderId, sock) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);
     const isAdmin = groupMetadata.participants.some(
-      (p) => p.id === senderId && (p.admin === "admin" || p.admin === "superadmin")
+      (p) =>
+        p.id === senderId && (p.admin === "admin" || p.admin === "superadmin")
     );
     return isAdmin;
   } catch (error) {
@@ -1144,7 +1187,9 @@ async function isUserAdmin(remoteJid, senderId, sock) {
 // Fungsi untuk menambahkan anggota ke grup
 async function addMultipleMembers(remoteJid, senderId, sock, phoneNumbers) {
   if (!(await isUserAdmin(remoteJid, senderId, sock))) {
-    await sock.sendMessage(remoteJid, { text: "⚠️ Hanya admin yang bisa menambahkan anggota!" });
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Hanya admin yang bisa menambahkan anggota!",
+    });
     return;
   }
 
@@ -1158,14 +1203,18 @@ async function addMultipleMembers(remoteJid, senderId, sock, phoneNumbers) {
     });
   } catch (error) {
     console.log("❌ Gagal menambahkan anggota:", error);
-    await sock.sendMessage(remoteJid, { text: "⚠️ Gagal menambahkan beberapa anggota." });
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Gagal menambahkan beberapa anggota.",
+    });
   }
 }
 
 // Fungsi untuk menghapus anggota dari grup
 async function removeMultipleMembers(remoteJid, senderId, sock, phoneNumbers) {
   if (!(await isUserAdmin(remoteJid, senderId, sock))) {
-    await sock.sendMessage(remoteJid, { text: "⚠️ Hanya admin yang bisa mengeluarkan anggota!" });
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Hanya admin yang bisa mengeluarkan anggota!",
+    });
     return;
   }
 
@@ -1179,9 +1228,59 @@ async function removeMultipleMembers(remoteJid, senderId, sock, phoneNumbers) {
     });
   } catch (error) {
     console.log("❌ Gagal mengeluarkan anggota:", error);
-    await sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengeluarkan beberapa anggota." });
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Gagal mengeluarkan beberapa anggota.",
+    });
   }
 }
 
+// Promote dan Demote
+async function promoteMember(remoteJid, sender, sock, mentionedJid) {
+  try {
+    const groupMetadata = await sock.groupMetadata(remoteJid);
+    const groupAdmins = groupMetadata.participants
+      .filter((member) => member.admin)
+      .map((admin) => admin.id);
+
+    if (!groupAdmins.includes(sender)) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu bukan admin grup!",
+      });
+    }
+
+    await sock.groupParticipantsUpdate(remoteJid, mentionedJid, "promote");
+    sock.sendMessage(remoteJid, {
+      text: `✅ Berhasil promote ${mentionedJid.join(", ")} menjadi admin.`,
+    });
+  } catch (error) {
+    console.error("Error promoting member:", error);
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal promote member." });
+  }
+}
+
+async function demoteMember(remoteJid, sender, sock, mentionedJid) {
+  try {
+    const groupMetadata = await sock.groupMetadata(remoteJid);
+    const groupAdmins = groupMetadata.participants
+      .filter((member) => member.admin)
+      .map((admin) => admin.id);
+
+    if (!groupAdmins.includes(sender)) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu bukan admin grup!",
+      });
+    }
+
+    await sock.groupParticipantsUpdate(remoteJid, mentionedJid, "demote");
+    sock.sendMessage(remoteJid, {
+      text: `✅ Berhasil demote ${mentionedJid.join(
+        ", "
+      )} menjadi anggota biasa.`,
+    });
+  } catch (error) {
+    console.error("Error demoting member:", error);
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal demote member." });
+  }
+}
 
 startBot();

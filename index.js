@@ -255,6 +255,9 @@ async function startBot() {
           text: "⚠️ Tag admin yang ingin didemote!",
         });
       }
+    } else if (textMessage.startsWith("!announce ")) {
+      const messageContent = textMessage.replace("!announce ", "").trim();
+      await announceToAll(remoteJid, sender, sock, messageContent);
     } else "Pilihan yang anda inginkan belum tersedia";
   });
 
@@ -1284,5 +1287,33 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal demote member." });
   }
 }
+
+
+async function announceToAll(remoteJid, sender, sock, message) {
+  try {
+    const groupMetadata = await sock.groupMetadata(remoteJid);
+    const participants = groupMetadata.participants.map((member) => member.id);
+
+    // Pastikan hanya admin yang bisa melakukan pengumuman
+    const groupAdmins = groupMetadata.participants
+      .filter((member) => member.admin)
+      .map((admin) => admin.id);
+
+    if (!groupAdmins.includes(sender)) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu bukan admin grup!",
+      });
+    }
+
+    await sock.sendMessage(remoteJid, {
+      text: `📢 *Pengumuman!*\n\n${message}`,
+      mentions: participants, // Mentions tanpa menampilkan nomor
+    });
+  } catch (error) {
+    console.error("Error sending announcement:", error);
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengirim pengumuman." });
+  }
+}
+
 
 startBot();

@@ -51,6 +51,51 @@ async function startBot() {
     else if (update.connection === "open") console.log("✅ Bot siap!");
   });
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+sock.ev.on("group-participants.update", async (update) => {
+  console.log("🔄 Update diterima:", update); // Debugging log
+
+  const { id, participants, action } = update;
+
+  for (let participant of participants) {
+    let userNumber = participant.replace("@s.whatsapp.net", "");
+
+    if (action === "add") {
+      console.log(`✅ Deteksi anggota baru: @${userNumber}`);
+
+      await delay(2000); // Delay untuk memastikan update sudah stabil
+
+      let welcomeMessage = `👋 *Selamat datang @${userNumber}!*  
+Semoga betah di grup ini. Jangan lupa baca aturan ya! 😊`;
+
+      await sock.sendMessage(id, {
+        text: welcomeMessage,
+        mentions: [participant],
+      });
+
+      console.log("📩 Pesan selamat datang dikirim ke:", userNumber);
+    } else if (action === "remove") {
+      console.log(`❌ Deteksi anggota keluar: @${userNumber}`);
+
+      await delay(2000); // Delay untuk menghindari bug
+      let goodbyeMessage = `😢 *Selamat tinggal @${userNumber}!*  
+Semoga sukses dan sampai jumpa di lain waktu!`;
+
+      await sock.sendMessage(id, {
+        text: goodbyeMessage,
+        mentions: [participant],
+      });
+
+      console.log("📩 Pesan selamat tinggal dikirim ke:", userNumber);
+    }
+  }
+});
+
+
+
+
+
   // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
@@ -312,11 +357,6 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !repeatgremind [waktu] [pesan] ➝ 🔁 Setel pengingat grup berulang
 🔹 !stoprepeat ➝ ⛔ Hentikan pengingat berulang
 
-👨‍🏫 *MANAJEMEN GURU*
-🔹 !tambahguru [nomor] ➝ ✍️ Menambahkan nomor guru
-🔹 !listguru ➝ 📜 Melihat daftar guru
-🔹 !hapusguru [nomor] ➝ ❌ Menghapus guru
-
 📖 *MANAJEMEN AUTO-RESPONSE*
 🔹 !ajarin [pertanyaan] = [jawaban] ➝ 🤖 Mengajarkan bot auto-response
 🔹 !listajarin [halaman] ➝ 📖 Melihat daftar pertanyaan yang sudah diajarkan
@@ -333,6 +373,8 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !remove [nomor] ➝ 🚪 Mengeluarkan anggota dari grup
 🔹 !promote [@user] ➝ 👤 Promote menjadi admin 
 🔹 !promote [@user] ➝ 👥 Demote menjadi anggota biasa
+!kritik
+!lihatkritik
 
 💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
   `;
@@ -1358,7 +1400,6 @@ async function submitFeedback(remoteJid, sender, sock, message) {
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal menyimpan kritik & saran." });
   }
 }
-
 
 // Fungsi untuk melihat daftar kritik & saran
 async function viewFeedback(remoteJid, sender, sock) {

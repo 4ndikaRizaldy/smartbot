@@ -97,6 +97,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ !faktaunik – 💡 Fakta menarik  
 ➤ !quran [surat:ayat] – 📖 Ayat & terjemahan  
 ➤ !wiki [pertanyaan] – 🌍 Cari info Wikipedia  
+➤ !bing [pertanyaan] – 🌐 Pencarian Bing
 ➤ !pantun – 📜 Pantun acak  
 ➤ !motivasi – 🌟 Motivasi harian  
 
@@ -133,17 +134,88 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 
 🔹 *Gunakan perintah di atas untuk menikmati fitur SmartBot!* 🚀`,
   },
-];
+  {
+    keyword: "!kodenegara",
+    response: `✨ *Kode Negara untuk Bahasa* 🌍  
 
+🌍 *af* ➝ Afrikaans  
+🌍 *sq* ➝ Albania  
+🌍 *am* ➝ Amharik  
+🌍 *ar* ➝ Arab  
+🌍 *hy* ➝ Armenia  
+🌍 *eu* ➝ Basque  
+🌍 *bn* ➝ Bengali  
+🌍 *bs* ➝ Bosnia  
+🌍 *bg* ➝ Bulgaria  
+🌍 *ca* ➝ Catalan  
+🌍 *zh-CN* ➝ Mandarin (Sederhana)  
+🌍 *zh-TW* ➝ Mandarin (Tradisional)  
+🌍 *hr* ➝ Kroasia  
+🌍 *cs* ➝ Ceko  
+🌍 *da* ➝ Denmark  
+🌍 *nl* ➝ Belanda  
+🌍 *en* ➝ Inggris  
+🌍 *et* ➝ Estonia  
+🌍 *tl* ➝ Tagalog  
+🌍 *fi* ➝ Finlandia  
+🌍 *fr* ➝ Prancis  
+🌍 *ka* ➝ Georgia  
+🌍 *de* ➝ Jerman  
+🌍 *el* ➝ Yunani  
+🌍 *gu* ➝ Gujarati  
+🌍 *ht* ➝ Haiti  
+🌍 *he* ➝ Ibrani  
+🌍 *hi* ➝ Hindi  
+🌍 *hu* ➝ Hungaria  
+🌍 *is* ➝ Islandia  
+🌍 *id* ➝ Indonesia  
+🌍 *it* ➝ Italia  
+🌍 *ja* ➝ Jepang  
+🌍 *kn* ➝ Kannada  
+🌍 *kk* ➝ Kazakh  
+🌍 *km* ➝ Khmer  
+🌍 *ko* ➝ Korea  
+🌍 *lv* ➝ Latvia  
+🌍 *lt* ➝ Lithuania  
+🌍 *ms* ➝ Melayu  
+🌍 *mt* ➝ Malta  
+🌍 *no* ➝ Norwegia  
+🌍 *fa* ➝ Persia  
+🌍 *pl* ➝ Polandia  
+🌍 *pt* ➝ Portugis  
+🌍 *pa* ➝ Punjabi  
+🌍 *ro* ➝ Rumania  
+🌍 *ru* ➝ Rusia  
+🌍 *sr* ➝ Serbia  
+🌍 *sk* ➝ Slovakia  
+🌍 *sl* ➝ Slovenia  
+🌍 *es* ➝ Spanyol  
+🌍 *sw* ➝ Swahili  
+🌍 *sv* ➝ Swedia  
+🌍 *ta* ➝ Tamil  
+🌍 *te* ➝ Telugu  
+🌍 *th* ➝ Thailand  
+🌍 *tr* ➝ Turki  
+🌍 *uk* ➝ Ukraina  
+🌍 *ur* ➝ Urdu  
+🌍 *vi* ➝ Vietnam  
+🌍 *cy* ➝ Welsh  
+🌍 *yi* ➝ Yiddish  
+
+🔹 *Gunakan kode di atas untuk menerjemahkan bahasa dengan SmartBot!* 🌍`,
+  },
+];
 // 🔹 Daftar Pertanyaan Tebak Logika
 const logicQuestions = [
   {
-    question: "Aku selalu di depan kamu, tapi kamu tak bisa melihatku. Aku adalah?",
+    question:
+      "Aku selalu di depan kamu, tapi kamu tak bisa melihatku. Aku adalah?",
     answer: "masa depan",
     clue: "🔎 Sesuatu yang belum terjadi.",
   },
   {
-    question: "Aku punya banyak kunci tapi tidak bisa membuka pintu. Aku adalah?",
+    question:
+      "Aku punya banyak kunci tapi tidak bisa membuka pintu. Aku adalah?",
     answer: "piano",
     clue: "🔎 Aku bisa menghasilkan musik.",
   },
@@ -163,7 +235,8 @@ const logicQuestions = [
     clue: "🔎 Biasanya terjadi saat sedih atau kecewa.",
   },
   {
-    question: "Semakin banyak kamu mengambilku, semakin banyak yang tertinggal. Aku adalah?",
+    question:
+      "Semakin banyak kamu mengambilku, semakin banyak yang tertinggal. Aku adalah?",
     answer: "jejak kaki",
     clue: "🔎 Aku muncul di pasir atau tanah basah.",
   },
@@ -203,12 +276,14 @@ const logicQuestions = [
     clue: "🔎 Bisa dimakan dan sehat untuk tubuh.",
   },
   {
-    question: "Aku berwarna hitam saat bersih, dan putih saat kotor. Aku adalah?",
+    question:
+      "Aku berwarna hitam saat bersih, dan putih saat kotor. Aku adalah?",
     answer: "papan tulis",
     clue: "🔎 Biasanya ada di kelas.",
   },
   {
-    question: "Aku lebih ringan dari udara tetapi tidak bisa mengapung selamanya. Aku adalah?",
+    question:
+      "Aku lebih ringan dari udara tetapi tidak bisa mengapung selamanya. Aku adalah?",
     answer: "balon",
     clue: "🔎 Bisa meledak jika terkena benda tajam.",
   },
@@ -283,7 +358,8 @@ const logicQuestions = [
     clue: "🔎 Biasanya ada di kamar mandi.",
   },
   {
-    question: "Aku bisa menyimpan sesuatu tetapi semakin penuh semakin ringan. Aku adalah?",
+    question:
+      "Aku bisa menyimpan sesuatu tetapi semakin penuh semakin ringan. Aku adalah?",
     answer: "balon",
     clue: "🔎 Bisa terbang jika diisi udara.",
   },
@@ -336,58 +412,57 @@ const logicQuestions = [
     question: "Aku bisa dipakai tapi bukan baju. Aku adalah?",
     answer: "topi",
     clue: "🔎 Dipakai di kepala untuk melindungi dari matahari.",
-  }
+  },
 ];
-
 
 // Daftar Fakta Unik
 const faktaList = [
-        "💡 Otak manusia dapat menyimpan sekitar 2,5 petabyte informasi. (Scientific American, 2023)",
-        "💡 Lebah bisa mengenali wajah manusia! (Journal of Experimental Biology, 2021)",
-        "💡 Tidur kurang dari 6 jam sehari dapat menurunkan daya tahan tubuh. (National Sleep Foundation, 2024)",
-        "💡 Jantung manusia berdetak lebih dari 100.000 kali sehari. (American Heart Association, 2022)",
-        "💡 Air panas bisa membeku lebih cepat daripada air dingin, ini disebut efek Mpemba. (Physics World, 2023)",
-        "💡 Jerapah hanya tidur sekitar 30 menit sehari dalam keadaan berdiri. (Smithsonian National Zoo, 2022)",
-        "💡 Sidik jari koala sangat mirip dengan manusia hingga bisa membingungkan forensik. (Australian Koala Foundation, 2025)",
-        "💡 Planet Venus berputar searah jarum jam, berbeda dari planet lain di tata surya. (NASA, 2024)",
-        "💡 Manusia berbagi sekitar 60% DNA dengan pisang. (National Human Genome Research Institute, 2023)",
-        "💡 Air liur manusia bisa mengurai makanan lebih cepat daripada asam baterai. (Journal of Oral Biosciences, 2022)",
-        "💡 Zebra tidak memiliki warna putih dengan garis hitam, melainkan hitam dengan garis putih. (National Geographic, 2024)",
-        "💡 Jika kita bisa mendengar suara di luar angkasa, matahari akan bersuara seperti deru mesin jet. (NASA, 2023)",
-        "💡 Kucing memiliki tulang selangka yang tidak terhubung ke tulang lain, memungkinkan mereka masuk ke ruang sempit. (Smithsonian, 2024)",
-        "💡 Pisang secara teknis adalah buah beri, tetapi stroberi bukan. (Botanical Science Journal, 2023)",
-        "💡 Air mata manusia mengandung hormon yang bisa mengurangi stres saat menangis. (Harvard Medical School, 2023)",
-        "💡 Hiu sudah ada di bumi lebih lama daripada pohon! Mereka muncul sekitar 400 juta tahun yang lalu. (Paleontology Journal, 2024)",
-        "💡 Cahaya dari matahari membutuhkan sekitar 8 menit 20 detik untuk mencapai bumi. (NASA, 2024)",
-        "💡 Ubur-ubur Turritopsis dohrnii dikenal sebagai ‘makhluk abadi’ karena bisa kembali ke tahap polip. (Marine Biology Research, 2023)",
-        "💡 Madu adalah satu-satunya makanan yang tidak akan pernah basi, bahkan setelah ribuan tahun. (National Honey Board, 2023)",
-        "💡 Pulau Paskah memiliki patung kepala raksasa, dan ternyata mereka memiliki tubuh di bawah tanah. (Archaeology Journal, 2022)",
-        "💡 Gajah bisa mengenali diri mereka sendiri di cermin, menunjukkan tanda-tanda kesadaran diri. (Animal Cognition Journal, 2023)",
-        "💡 Lumba-lumba memberi nama satu sama lain dengan peluit unik. (Marine Mammal Science, 2024)",
-        "💡 Bekicot bisa tidur hingga tiga tahun dalam kondisi ekstrem. (Biology Letters, 2023)",
-        "💡 Ada lebih banyak bintang di alam semesta daripada butiran pasir di semua pantai di bumi. (NASA, 2024)",
-        "💡 Kecepatan bersin manusia bisa mencapai lebih dari 160 km/jam. (Medical News Today, 2023)",
-        "💡 Jantung paus biru sebesar mobil kecil dan detaknya bisa terdengar dari 3 km jauhnya. (National Geographic, 2024)",
-        "💡 Seekor gurita memiliki tiga jantung dan darahnya berwarna biru. (Marine Science Journal, 2023)",
-        "💡 Bunga matahari bisa 'melihat' matahari dan bergerak mengikutinya sepanjang hari. (Botanical Review, 2024)",
-        "💡 Listrik dari satu kilat bisa menyalakan lampu bohlam selama sekitar tiga bulan. (Weather Science, 2023)",
-        "💡 Rasa gravitasi di puncak Gunung Everest lebih lemah dibandingkan di permukaan laut. (Geophysics Journal, 2024)",
-        "💡 Katak bisa menelan makanan dengan menggunakan matanya untuk mendorong makanan ke dalam tenggorokan. (Zoology Research, 2023)",
-        "💡 Siput memiliki ribuan gigi kecil dan bisa menggiling makanan dengan rahangnya. (Journal of Molluscan Studies, 2024)",
-        "💡 Gunung berapi terbesar di tata surya adalah Olympus Mons di Mars, yang tiga kali lebih tinggi dari Gunung Everest. (NASA, 2023)",
-        "💡 Setiap tahun, tubuh manusia mengganti hampir seluruh selnya, artinya kita seperti ‘orang baru’ setiap 7-10 tahun. (Science Journal, 2024)",
-        "💡 Kupu-kupu bisa merasakan rasa dengan kaki mereka. (Entomology Research, 2023)",
-        "💡 Air di bumi sudah ada selama lebih dari 4 miliar tahun, lebih tua dari matahari. (Geological Society, 2024)",
-        "💡 Popcorn bisa meledak karena memiliki air di dalamnya yang menguap saat dipanaskan. (Food Science Journal, 2023)",
-        "💡 Beruang kutub memiliki kulit hitam di bawah bulu putihnya untuk menyerap lebih banyak panas. (Arctic Research, 2024)",
-        "💡 Planet Saturnus bisa mengapung di air jika ada kolam cukup besar, karena densitasnya lebih rendah dari air. (NASA, 2024)",
-        "💡 Burung hantu tidak bisa menggerakkan bola matanya, jadi mereka memutar kepala hingga 270 derajat untuk melihat sekeliling. (Ornithology Journal, 2023)",
-        "💡 Bayi hiu terkadang memakan saudaranya sendiri sebelum lahir dalam rahim ibu mereka. (Marine Biology Research, 2024)",
-        "💡 Semut bisa mengangkat beban 50 kali lebih berat dari tubuhnya. (Entomology Journal, 2023)",
-        "💡 Buaya tidak bisa menjulurkan lidahnya karena lidahnya melekat ke langit-langit mulut. (Zoological Journal, 2024)",
-        "💡 Burung kolibri adalah satu-satunya burung yang bisa terbang mundur. (Bird Science, 2023)",
-        "💡 Tikus bisa tertawa ketika mereka digelitik. (Animal Behavior Research, 2024)",
-        "💡 Ada spesies ikan yang bisa berjalan di darat, salah satunya adalah ikan paru-paru (lungfish). (Marine Science, 2023)",
+  "💡 Otak manusia dapat menyimpan sekitar 2,5 petabyte informasi. (Scientific American, 2023)",
+  "💡 Lebah bisa mengenali wajah manusia! (Journal of Experimental Biology, 2021)",
+  "💡 Tidur kurang dari 6 jam sehari dapat menurunkan daya tahan tubuh. (National Sleep Foundation, 2024)",
+  "💡 Jantung manusia berdetak lebih dari 100.000 kali sehari. (American Heart Association, 2022)",
+  "💡 Air panas bisa membeku lebih cepat daripada air dingin, ini disebut efek Mpemba. (Physics World, 2023)",
+  "💡 Jerapah hanya tidur sekitar 30 menit sehari dalam keadaan berdiri. (Smithsonian National Zoo, 2022)",
+  "💡 Sidik jari koala sangat mirip dengan manusia hingga bisa membingungkan forensik. (Australian Koala Foundation, 2025)",
+  "💡 Planet Venus berputar searah jarum jam, berbeda dari planet lain di tata surya. (NASA, 2024)",
+  "💡 Manusia berbagi sekitar 60% DNA dengan pisang. (National Human Genome Research Institute, 2023)",
+  "💡 Air liur manusia bisa mengurai makanan lebih cepat daripada asam baterai. (Journal of Oral Biosciences, 2022)",
+  "💡 Zebra tidak memiliki warna putih dengan garis hitam, melainkan hitam dengan garis putih. (National Geographic, 2024)",
+  "💡 Jika kita bisa mendengar suara di luar angkasa, matahari akan bersuara seperti deru mesin jet. (NASA, 2023)",
+  "💡 Kucing memiliki tulang selangka yang tidak terhubung ke tulang lain, memungkinkan mereka masuk ke ruang sempit. (Smithsonian, 2024)",
+  "💡 Pisang secara teknis adalah buah beri, tetapi stroberi bukan. (Botanical Science Journal, 2023)",
+  "💡 Air mata manusia mengandung hormon yang bisa mengurangi stres saat menangis. (Harvard Medical School, 2023)",
+  "💡 Hiu sudah ada di bumi lebih lama daripada pohon! Mereka muncul sekitar 400 juta tahun yang lalu. (Paleontology Journal, 2024)",
+  "💡 Cahaya dari matahari membutuhkan sekitar 8 menit 20 detik untuk mencapai bumi. (NASA, 2024)",
+  "💡 Ubur-ubur Turritopsis dohrnii dikenal sebagai ‘makhluk abadi’ karena bisa kembali ke tahap polip. (Marine Biology Research, 2023)",
+  "💡 Madu adalah satu-satunya makanan yang tidak akan pernah basi, bahkan setelah ribuan tahun. (National Honey Board, 2023)",
+  "💡 Pulau Paskah memiliki patung kepala raksasa, dan ternyata mereka memiliki tubuh di bawah tanah. (Archaeology Journal, 2022)",
+  "💡 Gajah bisa mengenali diri mereka sendiri di cermin, menunjukkan tanda-tanda kesadaran diri. (Animal Cognition Journal, 2023)",
+  "💡 Lumba-lumba memberi nama satu sama lain dengan peluit unik. (Marine Mammal Science, 2024)",
+  "💡 Bekicot bisa tidur hingga tiga tahun dalam kondisi ekstrem. (Biology Letters, 2023)",
+  "💡 Ada lebih banyak bintang di alam semesta daripada butiran pasir di semua pantai di bumi. (NASA, 2024)",
+  "💡 Kecepatan bersin manusia bisa mencapai lebih dari 160 km/jam. (Medical News Today, 2023)",
+  "💡 Jantung paus biru sebesar mobil kecil dan detaknya bisa terdengar dari 3 km jauhnya. (National Geographic, 2024)",
+  "💡 Seekor gurita memiliki tiga jantung dan darahnya berwarna biru. (Marine Science Journal, 2023)",
+  "💡 Bunga matahari bisa 'melihat' matahari dan bergerak mengikutinya sepanjang hari. (Botanical Review, 2024)",
+  "💡 Listrik dari satu kilat bisa menyalakan lampu bohlam selama sekitar tiga bulan. (Weather Science, 2023)",
+  "💡 Rasa gravitasi di puncak Gunung Everest lebih lemah dibandingkan di permukaan laut. (Geophysics Journal, 2024)",
+  "💡 Katak bisa menelan makanan dengan menggunakan matanya untuk mendorong makanan ke dalam tenggorokan. (Zoology Research, 2023)",
+  "💡 Siput memiliki ribuan gigi kecil dan bisa menggiling makanan dengan rahangnya. (Journal of Molluscan Studies, 2024)",
+  "💡 Gunung berapi terbesar di tata surya adalah Olympus Mons di Mars, yang tiga kali lebih tinggi dari Gunung Everest. (NASA, 2023)",
+  "💡 Setiap tahun, tubuh manusia mengganti hampir seluruh selnya, artinya kita seperti ‘orang baru’ setiap 7-10 tahun. (Science Journal, 2024)",
+  "💡 Kupu-kupu bisa merasakan rasa dengan kaki mereka. (Entomology Research, 2023)",
+  "💡 Air di bumi sudah ada selama lebih dari 4 miliar tahun, lebih tua dari matahari. (Geological Society, 2024)",
+  "💡 Popcorn bisa meledak karena memiliki air di dalamnya yang menguap saat dipanaskan. (Food Science Journal, 2023)",
+  "💡 Beruang kutub memiliki kulit hitam di bawah bulu putihnya untuk menyerap lebih banyak panas. (Arctic Research, 2024)",
+  "💡 Planet Saturnus bisa mengapung di air jika ada kolam cukup besar, karena densitasnya lebih rendah dari air. (NASA, 2024)",
+  "💡 Burung hantu tidak bisa menggerakkan bola matanya, jadi mereka memutar kepala hingga 270 derajat untuk melihat sekeliling. (Ornithology Journal, 2023)",
+  "💡 Bayi hiu terkadang memakan saudaranya sendiri sebelum lahir dalam rahim ibu mereka. (Marine Biology Research, 2024)",
+  "💡 Semut bisa mengangkat beban 50 kali lebih berat dari tubuhnya. (Entomology Journal, 2023)",
+  "💡 Buaya tidak bisa menjulurkan lidahnya karena lidahnya melekat ke langit-langit mulut. (Zoological Journal, 2024)",
+  "💡 Burung kolibri adalah satu-satunya burung yang bisa terbang mundur. (Bird Science, 2023)",
+  "💡 Tikus bisa tertawa ketika mereka digelitik. (Animal Behavior Research, 2024)",
+  "💡 Ada spesies ikan yang bisa berjalan di darat, salah satunya adalah ikan paru-paru (lungfish). (Marine Science, 2023)",
 ];
 
 const getRandomFakta = () => {
@@ -665,10 +740,8 @@ const pantunList = [
     baris2: "Dimakan hangat dengan rendang.",
     baris3: "Kalau sering iri hati,",
     baris4: "Hidup jadi tidak tenang.",
-  }
+  },
 ];
-
-
 
 // Ekspor data agar bisa digunakan di file lain
 module.exports = {

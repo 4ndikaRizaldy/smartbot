@@ -176,6 +176,15 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
           text: "⚠️ Masukkan kata kunci setelah *!wiki* contoh: *!wiki Albert Einstein*",
         });
       }
+    } else if (textMessage.startsWith("!bing ")) {
+      const query = textMessage.replace("!bing ", "").trim();
+      if (query) {
+        searchBingNoApi(query, remoteJid, sock);
+      } else {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Masukkan kata kunci setelah *!bing* contoh: *!bing teknologi AI*",
+        });
+      }
     } else if (textMessage.startsWith("!hitung ")) {
       try {
         const expression = textMessage.replace("!hitung", "").trim();
@@ -314,80 +323,83 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
   checkGroupSchedule(sock); // Mulai cek jadwal otomatis
 }
 
-// 🔹 Fungsi untuk menampilkan menu
+// 🔹 Fungsi untuk menampilkan menu yang lebih rapi dan menarik
 const showMenu = (from, sock) => {
   const menuText = `
 ✨ *SMARTBOT MENU* ✨
-Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur keren. Berikut daftar perintah yang bisa kamu gunakan:
+Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perintah yang bisa kamu gunakan:
 
-📌 *INFO & UTILITAS*
-🔹 !menu ➝ 📋 Menampilkan daftar perintah
-🔹 !ping ➝ 🏓 Mengecek apakah bot aktif
-🔹 !jumlahanggota ➝ 👥 Menampilkan jumlah anggota grup
-🔹 !shortlink [URL] ➝ 🔗 Memperpendek link
-🔹 !qrcode ➝ 📷 Membuat Barcode
+📌 *INFO & UTILITAS*  
+━━━━━━━━━━━━━━━━━━  
+🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
+🔹 *!ping* ➝ 🏓 Mengecek apakah bot aktif  
+🔹 *!jumlahanggota* ➝ 👥 Menampilkan jumlah anggota grup  
+🔹 *!shortlink [URL]* ➝ 🔗 Memperpendek link  
+🔹 *!qrcode [teks]* ➝ 📷 Membuat Barcode  
 
-🎮 *PERMAINAN & TEBAK-TEBAKAN*
-🔹 !tebakangka ➝ 🎲 Mulai permainan tebak angka (1-10)
-🔹 !jawab [angka] ➝ 🔢 Menjawab tebak angka
-🔹 !tebaklogika ➝ 🧠 Mulai permainan tebak logika
-🔹 !jlogika [jawaban] ➝ 💭 Menjawab tebak logika
-🔹 !kluelogika ➝ 🧩 Mendapatkan klue untuk tebak logika
+🎮 *PERMAINAN & TEBAK-TEBAKAN*  
+━━━━━━━━━━━━━━━━━━  
+🎲 *Tebak Angka* ➝ *!tebakangka* | *!jawab [angka]*  
+🧠 *Tebak Logika* ➝ *!tebaklogika* | *!jlogika [jawaban]* | *!kluelogika*  
 
-📚 *INFO & PENGETAHUAN*
-🔹 !tanggal ➝ 📅 Menampilkan tanggal hari ini (Masehi & Hijriah)
-🔹 !faktaunik ➝ 💡 Mengirimkan fakta unik
-🔹 !quran [surat:ayat] ➝ 📖 Menampilkan ayat dan terjemahannya
-🔹 !wiki [pertanyaan] ➝ 🌍 Mencari informasi dari Wikipedia
-🔹 !pantun ➝ 📜 Menampilkan pantun secara acak
-🔹 !motivasi ➝ 🌟 Mengirimkan motivasi harian
+📚 *INFO & PENGETAHUAN*  
+━━━━━━━━━━━━━━━━━━  
+📅 *Tanggal* ➝ *!tanggal* (Masehi & Hijriah)  
+💡 *Fakta Unik* ➝ *!faktaunik*  
+📖 *Quran* ➝ *!quran [surat:ayat]*  
+🌍 *Wikipedia* ➝ *!wiki [pertanyaan]*  
+🔍 *Pencarian Bing* ➝ *!bing [pertanyaan]*  
+📜 *Pantun* ➝ *!pantun*  
+🌟 *Motivasi* ➝ *!motivasi*  
 
-🔢 *MATEMATIKA*
-🔹 !hitung [ekspresi] ➝ 🧮 Menghitung ekspresi matematika (contoh: !hitung 5+3*2)
+🔢 *MATEMATIKA*  
+━━━━━━━━━━━━━━━━━━  
+🧮 *Kalkulator* ➝ *!hitung [ekspresi]* (contoh: !hitung 5+3*2)  
 
-🌍 *BAHASA & TERJEMAHAN*
-🔹 !translate [kode bahasa] [teks] ➝ 🔄 Menerjemahkan teks ke bahasa lain (contoh: !translate en Pantai)
+🌍 *BAHASA & TERJEMAHAN*  
+━━━━━━━━━━━━━━━━━━  
+🔄 *Terjemahan* ➝ *!translate [kode bahasa] [teks]* (contoh: !translate en Pantai)  
 
-⏰ *PENGINGAT (REMINDER)*
-🔹 !setremind [tanggal] [jam] [pesan] ➝ 📅 Setel pengingat individu
-🔹 !setgremind [tanggal] [jam] [pesan] ➝ 🏷️ Setel pengingat grup
-🔹 !listremind ➝ 📜 Lihat daftar pengingat
-🔹 !cancelremind [ID pengingat] ➝ ❌ Hapus pengingat tertentu
-🔹 !repeatremind [waktu] [pesan] ➝ 🔁 Setel pengingat berulang
-🔹 !repeatgremind [waktu] [pesan] ➝ 🔁 Setel pengingat grup berulang
-🔹 !stoprepeat ➝ ⛔ Hentikan pengingat berulang
+⏰ *PENGINGAT (REMINDER)*  
+━━━━━━━━━━━━━━━━━━  
+📅 *Setel Pengingat* ➝ *!setremind [tanggal] [jam] [pesan]*  
+🏷️ *Setel Pengingat Grup* ➝ *!setgremind [tanggal] [jam] [pesan]*  
+📜 *Lihat Pengingat* ➝ *!listremind*  
+❌ *Hapus Pengingat* ➝ *!cancelremind [ID]*  
+🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat*  
 
-👨‍🏫 *MANAJEMEN GURU*
-🔹 !tambahguru [nomor] ➝ ✍️ Menambahkan nomor guru
-🔹 !listguru ➝ 📜 Melihat daftar guru
-🔹 !hapusguru [nomor] ➝ ❌ Menghapus guru
+👨‍🏫 *MANAJEMEN GURU*  
+━━━━━━━━━━━━━━━━━━  
+✍️ *Tambah Guru* ➝ *!tambahguru [nomor]*  
+📜 *Daftar Guru* ➝ *!listguru*  
+❌ *Hapus Guru* ➝ *!hapusguru [nomor]*  
 
-📖 *MANAJEMEN AUTO-RESPONSE*
-🔹 !ajarin [pertanyaan] = [jawaban] ➝ 🤖 Mengajarkan bot auto-response
-🔹 !listajarin [halaman] ➝ 📖 Melihat daftar pertanyaan yang sudah diajarkan
-🔹 !hapusajarin [pertanyaan] ➝ 🗑 Menghapus auto-response
+📖 *MANAJEMEN AUTO-RESPONSE*  
+━━━━━━━━━━━━━━━━━━  
+🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
+📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
+🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*  
 
-👥 *GRUP & ADMIN*
-🔹 !tagall [pesan opsional] ➝ 📢 Mention semua anggota grup
-🔹 !bukagrup ➝ 🔓 Membuka grup
-🔹 !tutupgrup ➝ 🔒 Menutup grup
-🔹 !jadwalbuka [jam] ➝ ⏰ Setel jadwal buka grup
-🔹 !jadwaltutup [jam] ➝ ⏰ Setel jadwal tutup grup
-🔹 !cekjadwal ➝ 📆 Cek jadwal buka/tutup grup
-🔹 !add [nomor] ➝ ➕ Menambahkan anggota ke grup
-🔹 !remove [nomor] ➝ 🚪 Mengeluarkan anggota dari grup
-🔹 !promote [@user] ➝ 👤 Promote menjadi admin 
-🔹 !demote [@user] ➝ 👥 Demote menjadi anggota biasa
+👥 *GRUP & ADMIN*  
+━━━━━━━━━━━━━━━━━━  
+📢 *Tag Semua* ➝ *!tagall [pesan opsional]*  
+🔓 *Buka/Tutup Grup* ➝ *!bukagrup* | *!tutupgrup*  
+⏰ *Jadwal Grup* ➝ *!jadwalbuka [jam]* | *!jadwaltutup [jam]* | *!cekjadwal*  
+➕ *Tambah Anggota* ➝ *!add [nomor]* | 🚪 *Keluarkan* ➝ *!remove [nomor]*  
+👤 *Promote/Demote Admin* ➝ *!promote [@user]* | *!demote [@user]*  
 
-📩 *SARAN & MASUKAN*
-🔹 !kritik ➝ ✍️ Kirim kritik atau saran
-🔹 !lihatkritik ➝ 📜 Lihat daftar kritik yang masuk
+📩 *SARAN & MASUKAN*  
+━━━━━━━━━━━━━━━━━━  
+✍️ *Kirim Kritik* ➝ *!kritik*  
+📜 *Lihat Kritik* ➝ *!lihatkritik*  
 
-💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
+💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀  
   `;
 
   sock.sendMessage(from, { text: menuText });
 };
+
+
 
 //Translate
 async function translateText(textMessage, remoteJid, sock) {
@@ -434,6 +446,42 @@ async function translateText(textMessage, remoteJid, sock) {
     });
   }
 }
+
+const cheerio = require("cheerio");
+
+const searchBingNoApi = async (query, from, sock) => {
+  try {
+    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(
+      query
+    )}`;
+    const response = await axios.get(searchUrl, { timeout: 10000 });
+    const $ = cheerio.load(response.data);
+
+    let results = [];
+    $("li.b_algo h2 a").each((i, el) => {
+      if (i < 3) {
+        const title = $(el).text();
+        const link = $(el).attr("href");
+        results.push(`🔍 *${title}*\n🔗 ${link}`);
+      }
+    });
+
+    if (results.length === 0) {
+      sock.sendMessage(from, { text: "⚠️ Tidak ada hasil ditemukan." });
+      return;
+    }
+
+    const searchText = `🔎 *Hasil Pencarian Bing:*\n\n${results.join("\n\n")}`;
+    sock.sendMessage(from, { text: searchText });
+  } catch (error) {
+    console.error("Error Bing Search:", error.message);
+    sock.sendMessage(from, {
+      text: "⚠️ Terjadi kesalahan saat mencari di Bing.",
+    });
+  }
+};
+
+
 
 // Tag Semua Orang
 const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {

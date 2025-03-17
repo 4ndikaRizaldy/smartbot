@@ -323,6 +323,8 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !cekjadwal ➝ 📆 Cek jadwal buka/tutup grup
 🔹 !add [nomor] ➝ ➕ Menambahkan anggota ke grup
 🔹 !remove [nomor] ➝ 🚪 Mengeluarkan anggota dari grup
+🔹 !promote [@user] ➝ 👤 Promote menjadi admin 
+🔹 !promote [@user] ➝ 👥 Demote menjadi anggota biasa
 
 💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
   `;

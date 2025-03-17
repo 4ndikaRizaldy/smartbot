@@ -133,7 +133,7 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
     await handleTeacherCommands(textMessage, remoteJid, sender, sock);
 
     // Penanganan perintah umum dan utilitas
-    if (textMessage === "!menu") {
+    if (textMessage === "!fitur") {
       showMenu(remoteJid, sock);
     } else if (textMessage === "!ping") {
       sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
@@ -357,6 +357,11 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !repeatgremind [waktu] [pesan] ➝ 🔁 Setel pengingat grup berulang
 🔹 !stoprepeat ➝ ⛔ Hentikan pengingat berulang
 
+👨‍🏫 *MANAJEMEN GURU*
+🔹 !tambahguru [nomor] ➝ ✍️ Menambahkan nomor guru
+🔹 !listguru ➝ 📜 Melihat daftar guru
+🔹 !hapusguru [nomor] ➝ ❌ Menghapus guru
+
 📖 *MANAJEMEN AUTO-RESPONSE*
 🔹 !ajarin [pertanyaan] = [jawaban] ➝ 🤖 Mengajarkan bot auto-response
 🔹 !listajarin [halaman] ➝ 📖 Melihat daftar pertanyaan yang sudah diajarkan
@@ -372,15 +377,18 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu dengan berbagai fitur
 🔹 !add [nomor] ➝ ➕ Menambahkan anggota ke grup
 🔹 !remove [nomor] ➝ 🚪 Mengeluarkan anggota dari grup
 🔹 !promote [@user] ➝ 👤 Promote menjadi admin 
-🔹 !promote [@user] ➝ 👥 Demote menjadi anggota biasa
-!kritik
-!lihatkritik
+🔹 !demote [@user] ➝ 👥 Demote menjadi anggota biasa
+
+📩 *SARAN & MASUKAN*
+🔹 !kritik ➝ ✍️ Kirim kritik atau saran
+🔹 !lihatkritik ➝ 📜 Lihat daftar kritik yang masuk
 
 💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
   `;
 
   sock.sendMessage(from, { text: menuText });
 };
+
 
 //Translate
 async function translateText(textMessage, remoteJid, sock) {

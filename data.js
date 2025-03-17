@@ -73,6 +73,66 @@ const autoResponses = [
     keyword: "smartbot!",
     response: "Aku siap membantu! Mau lihat fiturku? Coba ketik *!menu* 🤖",
   },
+  {
+    keyword: "!menu",
+    response: `✨ *SMARTBOT MENU* ✨  
+Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:  
+
+📌 *UTILITAS*  
+➤ !menu – 📋 Tampilkan daftar perintah  
+➤ !ping – 🏓 Cek apakah bot aktif  
+➤ !jumlahanggota – 👥 Cek jumlah anggota grup  
+➤ !shortlink [URL] – 🔗 Perpendek link  
+➤ !qrcode – 📷 Buat barcode  
+
+🎮 *PERMAINAN*  
+➤ !tebakangka – 🎲 Tebak angka (1-10)  
+➤ !jawab [angka] – 🔢 Jawab tebak angka  
+➤ !tebaklogika – 🧠 Tebak logika  
+➤ !jlogika [jawaban] – 💭 Jawab tebak logika  
+➤ !kluelogika – 🧩 Dapatkan klue  
+
+📚 *PENGETAHUAN*  
+➤ !tanggal – 📅 Cek tanggal Masehi & Hijriah  
+➤ !faktaunik – 💡 Fakta menarik  
+➤ !quran [surat:ayat] – 📖 Ayat & terjemahan  
+➤ !wiki [pertanyaan] – 🌍 Cari info Wikipedia  
+➤ !pantun – 📜 Pantun acak  
+➤ !motivasi – 🌟 Motivasi harian  
+
+🔢 *MATEMATIKA*  
+➤ !hitung [ekspresi] – 🧮 Hitung ekspresi matematika  
+
+🌍 *BAHASA*  
+➤ !translate [kode] [teks] – 🔄 Terjemahkan teks  
+
+⏰ *PENGINGAT*  
+➤ !setremind [tgl] [jam] [pesan] – 📅 Set pengingat  
+➤ !setgremind [tgl] [jam] [pesan] – 🏷️ Pengingat grup  
+➤ !listremind – 📜 Lihat pengingat  
+➤ !cancelremind [ID] – ❌ Hapus pengingat  
+➤ !repeatremind [waktu] [pesan] – 🔁 Pengingat berulang  
+➤ !stoprepeat – ⛔ Hapus pengingat berulang  
+
+📖 *AUTO-RESPONSE*  
+➤ !ajarin [pertanyaan] = [jawaban] – 🤖 Ajari bot  
+➤ !listajarin [halaman] – 📖 Lihat daftar auto-response  
+➤ !hapusajarin [pertanyaan] – 🗑 Hapus auto-response  
+
+👥 *GRUP & ADMIN*  
+➤ !tagall [pesan] – 📢 Mention semua anggota  
+➤ !bukagrup / !tutupgrup – 🔓🔒 Buka/Tutup grup  
+➤ !jadwalbuka [jam] / !jadwaltutup [jam] – ⏰ Set jadwal buka/tutup  
+➤ !cekjadwal – 📆 Cek jadwal grup  
+➤ !add [nomor] / !remove [nomor] – ➕🚪 Tambah/Keluarkan anggota  
+➤ !promote [@user] / !demote [@user] – 👤 Admin/Member  
+
+📩 *SARAN & MASUKAN*  
+➤ !kritik – ✍️ Kirim kritik/saran  
+➤ !lihatkritik – 📜 Lihat kritik masuk  
+
+🔹 *Gunakan perintah di atas untuk menikmati fitur SmartBot!* 🚀`,
+  },
 ];
 
 // 🔹 Daftar Pertanyaan Tebak Logika
@@ -607,6 +667,7 @@ const pantunList = [
     baris4: "Hidup jadi tidak tenang.",
   }
 ];
+
 
 
 // Ekspor data agar bisa digunakan di file lain

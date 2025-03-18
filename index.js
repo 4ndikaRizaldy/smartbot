@@ -24,16 +24,16 @@ let logicGame = {};
 let botActive = true; //default aktif
 
 // 🔹 Fungsi untuk menangani auto response dengan mention
-async function handleAutoResponse(message, remoteJid, senderId, sock) {
+async function handleAutoResponse(message, remoteJid, sender, sock) {
   const lowerMessage = message.toLowerCase();
 
   for (const auto of autoResponses) {
     if (lowerMessage.includes(auto.keyword)) {
-      const responseText = `@${senderId.split("@")[0]} ${auto.response}`;
+      const responseText = `@${sender.split("@")[0]} ${auto.response}`;
 
       await sock.sendMessage(remoteJid, {
         text: responseText,
-        mentions: [senderId], // Mentions pengguna
+        mentions: [sender], // Mentions pengguna
       });
       return;
     }
@@ -208,8 +208,19 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
       giveLogicClue(remoteJid, sock);
     } else if (textMessage === "!tebakangka") {
       startGuessingGame(remoteJid, sock);
-    } else if (textMessage.startsWith("!jawab ")) {
+    } else if (textMessage.startsWith("!jangka ")) {
       checkGuess(textMessage, remoteJid, sender, sock);
+    } else if (textMessage === "!acakhuruf") {
+      startAcakHuruf(remoteJid, sender, sock);
+    } else if (textMessage.startsWith("!jhuruf ")) {
+      checkJawaban(remoteJid, sender, textMessage, sock);
+    } else if (textMessage === "!leaderboard") {
+      getLeaderboard(remoteJid, sock);
+    } else if (textMessage === "!rank") {
+      showRank(remoteJid, sender, sock);
+    } else if (textMessage.startsWith("!tantang ")) {
+      let opponentId = textMessage.split(" ")[1] + "@s.whatsapp.net";
+      challengePlayer(remoteJid, sender, opponentId, sock);
     } else if (textMessage.startsWith("!quran ")) {
       getQuranAyat(textMessage, remoteJid, sock);
     } else if (textMessage.startsWith("!pantun")) {
@@ -323,7 +334,6 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
   checkGroupSchedule(sock); // Mulai cek jadwal otomatis
 }
 
-// 🔹 Fungsi untuk menampilkan menu yang lebih rapi dan menarik
 const showMenu = (from, sock) => {
   const menuText = `
 ✨ *SMARTBOT MENU* ✨
@@ -339,8 +349,13 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
 🎮 *PERMAINAN & TEBAK-TEBAKAN*  
 ━━━━━━━━━━━━━━━━━━  
-🎲 *Tebak Angka* ➝ *!tebakangka* | *!jawab [angka]*  
+🎲 *Tebak Angka* ➝ *!tebakangka* | *!jangka [angka]*  
 🧠 *Tebak Logika* ➝ *!tebaklogika* | *!jlogika [jawaban]* | *!kluelogika*  
+🔠 *Acak Huruf* ➝ *!acakhuruf* | *!jhuruf [kata]*  
+⚔️ *1vs1 Acak Huruf* ➝ *!tantang @username*  
+🔥 *Survival Mode* ➝ *!survival*  
+🏆 *Leaderboard* ➝ *!leaderboard*  
+🎖 *Rank & Hadiah Virtual* ➝ *!rank*  
 
 📚 *INFO & PENGETAHUAN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -359,6 +374,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 🌍 *BAHASA & TERJEMAHAN*  
 ━━━━━━━━━━━━━━━━━━  
 🔄 *Terjemahan* ➝ *!translate [kode bahasa] [teks]* (contoh: !translate en Pantai)  
+🌏 *Kode Bahasa* ➝ *!kodenegara*  
 
 ⏰ *PENGINGAT (REMINDER)*  
 ━━━━━━━━━━━━━━━━━━  
@@ -398,6 +414,8 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
   sock.sendMessage(from, { text: menuText });
 };
+
+
 
 
 
@@ -447,6 +465,161 @@ async function translateText(textMessage, remoteJid, sock) {
   }
 }
 
+//Game Tebak Kata
+const daftarKata = [
+    "komputer", "program", "javascript", "android", "database",
+    "internet", "aplikasi", "robot", "artificial", "game"
+];
+
+let gameAcakHuruf = {}; // { chatId: { kata: "komputer", jawaban: "komputer", pemain: "userId" } }
+let poinUser = {}; // { "userId": 10 }
+let levelUser = {}; // { "userId": 1 }
+
+function pilihKata() {
+  let kata = daftarKata[Math.floor(Math.random() * daftarKata.length)];
+  let hurufAcak = kata
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+  return { kata, hurufAcak };
+}
+
+function startAcakHuruf(remoteJid, sender, sock) {
+  if (gameAcakHuruf[remoteJid]) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Masih ada permainan yang sedang berlangsung!",
+    });
+    return;
+  }
+
+  let { kata, hurufAcak } = pilihKata();
+  gameAcakHuruf[remoteJid] = { kata, jawaban: kata, pemain: sender };
+
+  sock.sendMessage(remoteJid, {
+    text: `🔀 *Tebak Kata Acak!*  
+🎭 Susun kata dari huruf berikut: *${hurufAcak}*  
+⏳ Jawab dalam 30 detik dengan *!jhuruf [kata]*`,
+  });
+
+  setTimeout(() => {
+    if (gameAcakHuruf[remoteJid]) {
+      sock.sendMessage(remoteJid, {
+        text: `⏳ Waktu habis! Jawaban: *${gameAcakHuruf[remoteJid].jawaban}*`,
+      });
+      delete gameAcakHuruf[remoteJid];
+    }
+  }, 30000);
+}
+
+function checkJawaban(remoteJid, sender, textMessage, sock) {
+  if (!gameAcakHuruf[remoteJid]) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Tidak ada permainan aktif! Mulai dengan *!acakhuruf*.",
+    });
+    return;
+  }
+
+  let jawabanUser = textMessage.split(" ")[1].toLowerCase();
+  let game = gameAcakHuruf[remoteJid];
+
+  if (jawabanUser === game.jawaban) {
+    let poin = (poinUser[sender] || 0) + 10;
+    poinUser[sender] = poin;
+
+    let level = Math.floor(poin / 50) + 1;
+    levelUser[sender] = level;
+
+    sock.sendMessage(remoteJid, {
+      text: `✅ *Benar!* 🎉  
++10 Poin untuk *${sender}*!  
+Total Poin: *${poin}*  
+📈 Level: *${level}*`,
+    });
+
+    delete gameAcakHuruf[remoteJid];
+  } else {
+    sock.sendMessage(remoteJid, { text: "❌ *Salah!* Coba lagi!" });
+  }
+}
+
+function getLeaderboard(remoteJid, sock) {
+  let leaderboard = Object.entries(poinUser)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(
+      (user, index) =>
+        `#${index + 1} @${user[0].split("@")[0]} - ${user[1]} Poin (Lvl ${
+          levelUser[user[0]] || 1
+        })`
+    )
+    .join("\n");
+
+  sock.sendMessage(remoteJid, {
+    text: `🏆 *Leaderboard:*  
+${leaderboard || "Belum ada pemain!"}`,
+  });
+}
+
+function getRank(poin) {
+  if (poin >= 500) return "🔥 *Grandmaster*";
+  if (poin >= 300) return "🌟 *Master*";
+  if (poin >= 100) return "🥇 *Gold*";
+  return "🔰 *Bronze*";
+}
+
+function showRank(remoteJid, sender, sock) {
+  let poin = poinUser[sender] || 0;
+  let rank = getRank(poin);
+
+  sock.sendMessage(remoteJid, {
+    text: `🏅 *Rank Kamu:*  
+👤 Nama: *${sender}*  
+✨ Poin: *${poin}*  
+📊 Rank: ${rank}`,
+  });
+}
+
+function challengePlayer(remoteJid, sender, opponentId, sock) {
+  if (!opponentId) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Gunakan *!tantang @user* untuk menantang seseorang!",
+    });
+    return;
+  }
+
+  if (gameAcakHuruf[remoteJid]) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Masih ada permainan yang berjalan!",
+    });
+    return;
+  }
+
+  let { kata, hurufAcak } = pilihKata();
+  gameAcakHuruf[remoteJid] = {
+    kata,
+    jawaban: kata,
+    pemain: sender,
+    lawan: opponentId,
+  };
+
+  sock.sendMessage(remoteJid, {
+    text: `🔥 *Duel 1v1!*  
+🎭 Susun kata dari huruf: *${hurufAcak}*  
+⏳ Jawab dengan *!jhuruf [kata]*`,
+  });
+
+  setTimeout(() => {
+    if (gameAcakHuruf[remoteJid]) {
+      sock.sendMessage(remoteJid, {
+        text: `⏳ Waktu habis! Jawaban: *${gameAcakHuruf[remoteJid].jawaban}*`,
+      });
+      delete gameAcakHuruf[remoteJid];
+    }
+  }, 30000);
+}
+
+
+// Pencarian BING
 const cheerio = require("cheerio");
 
 const searchBingNoApi = async (query, from, sock) => {
@@ -546,7 +719,7 @@ const startGuessingGame = (from, sock) => {
   const number = Math.floor(Math.random() * 10) + 1;
   guessingGame[from] = number;
   sock.sendMessage(from, {
-    text: "🎲 Tebak angka dari 1 hingga 10! Gunakan perintah *!jawab X* untuk menjawab.",
+    text: "🎲 Tebak angka dari 1 hingga 10! Gunakan perintah *!jangka X* untuk menjawab.",
   });
 };
 
@@ -1277,12 +1450,12 @@ async function checkGroupSchedule(sock) {
 }
 
 // Fungsi untuk mengecek apakah pengirim adalah admin
-async function isUserAdmin(remoteJid, senderId, sock) {
+async function isUserAdmin(remoteJid, sender, sock) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);
     const isAdmin = groupMetadata.participants.some(
       (p) =>
-        p.id === senderId && (p.admin === "admin" || p.admin === "superadmin")
+        p.id === sender && (p.admin === "admin" || p.admin === "superadmin")
     );
     return isAdmin;
   } catch (error) {
@@ -1292,8 +1465,8 @@ async function isUserAdmin(remoteJid, senderId, sock) {
 }
 
 // Fungsi untuk menambahkan anggota ke grup
-async function addMultipleMembers(remoteJid, senderId, sock, phoneNumbers) {
-  if (!(await isUserAdmin(remoteJid, senderId, sock))) {
+async function addMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
+  if (!(await isUserAdmin(remoteJid, sender, sock))) {
     await sock.sendMessage(remoteJid, {
       text: "⚠️ Hanya admin yang bisa menambahkan anggota!",
     });
@@ -1317,8 +1490,8 @@ async function addMultipleMembers(remoteJid, senderId, sock, phoneNumbers) {
 }
 
 // Fungsi untuk menghapus anggota dari grup
-async function removeMultipleMembers(remoteJid, senderId, sock, phoneNumbers) {
-  if (!(await isUserAdmin(remoteJid, senderId, sock))) {
+async function removeMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
+  if (!(await isUserAdmin(remoteJid, sender, sock))) {
     await sock.sendMessage(remoteJid, {
       text: "⚠️ Hanya admin yang bisa mengeluarkan anggota!",
     });

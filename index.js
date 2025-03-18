@@ -14,6 +14,7 @@ const {
   logicQuestions,
   getRandomFakta,
   pantunList,
+  daftarKata,
 } = require("./data");
 
 // Konfigurasi bahasa untuk format tanggal Indonesia
@@ -416,16 +417,15 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 };
 
 
-
-
-
-//Translate
+// Fungsi untuk menerjemahkan teks
 async function translateText(textMessage, remoteJid, sock) {
   try {
     const args = textMessage.split(" ");
+
+    // Validasi format input
     if (args.length < 3) {
       await sock.sendMessage(remoteJid, {
-        text: "⚠️ Format salah! Contoh: `!translate en Halo dunia. Apa kabar?`",
+        text: "⚠️ Format salah! Contoh: `!translate en Halo dunia. Apa kabar?` \nKetik `!kodenegara` untuk melihat kode bahasa yang tersedia.",
       });
       return;
     }
@@ -433,7 +433,7 @@ async function translateText(textMessage, remoteJid, sock) {
     const lang = args[1]; // Ambil kode bahasa
     const text = args.slice(2).join(" "); // Gabungkan teks setelah kode bahasa
 
-    // Cek apakah kode bahasa valid
+    // Periksa apakah kode bahasa valid
     if (!validLanguages.includes(lang)) {
       await sock.sendMessage(remoteJid, {
         text: "❌ Kode bahasa tidak valid! Pastikan kode bahasa yang dimasukkan benar.",
@@ -454,22 +454,22 @@ async function translateText(textMessage, remoteJid, sock) {
 
     const translatedText = translatedSentences.join(" "); // Gabungkan hasil terjemahan
 
+    // Kirim hasil terjemahan
     await sock.sendMessage(remoteJid, {
       text: `🔄 Terjemahan (${lang}): ${translatedText}`,
     });
+
   } catch (error) {
-    console.error("Error saat menerjemahkan:", error);
+    console.error("❌ Error saat menerjemahkan:", error);
     await sock.sendMessage(remoteJid, {
       text: "❌ Gagal menerjemahkan teks. Pastikan kode bahasa benar!",
     });
   }
 }
 
-//Game Tebak Kata
-const daftarKata = [
-    "komputer", "program", "javascript", "android", "database",
-    "internet", "aplikasi", "robot", "artificial", "game"
-];
+
+
+
 
 let gameAcakHuruf = {}; // { chatId: { kata: "komputer", jawaban: "komputer", pemain: "userId" } }
 let poinUser = {}; // { "userId": 10 }

@@ -94,13 +94,15 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
 });
 
 
-
-
-
   // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
     if (!msg.message) return;
+    try {
+      console.log(`Pesan dari: ${msg.key.remoteJid}`);
+    } catch (err) {
+      console.error("⚠️ Gagal mendekripsi pesan:", err);
+    }
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const textMessage =
@@ -140,7 +142,7 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
       sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
     } else if (textMessage.startsWith("!tagall")) {
       const customMessage =
-        textMessage.replace("!tagall", "").trim() || "👥 Mention All:";
+        textMessage.replace("!tagall", "").trim() || "👥 Mention All";
       mentionAll(remoteJid, sock, customMessage);
     } else if (textMessage === "!jumlahanggota") {
       countGroupMembers(remoteJid, sock);
@@ -213,6 +215,8 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
       checkGuess(textMessage, remoteJid, sender, sock);
     } else if (textMessage === "!acakhuruf") {
       startAcakHuruf(remoteJid, sender, sock);
+    } else if (textMessage === "!survival") {
+      startSurvival(remoteJid, sender, sock);
     } else if (textMessage.startsWith("!jhuruf ")) {
       checkJawaban(remoteJid, sender, textMessage, sock);
     } else if (textMessage === "!leaderboard") {
@@ -254,8 +258,8 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
         sock,
         textMessage.startsWith("!repeatgremind ")
       );
-    } else if (textMessage.startsWith("!stoprepeat")) {
-      stopRepeatReminder(remoteJid, sender, sock);
+    } else if (textMessage.startsWith("!stopremind ")) {
+      stopRepeatReminder(remoteJid, sender, textMessage, sock);
     }
 
     // Penanganan pembelajaran (learning)
@@ -383,6 +387,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 🏷️ *Setel Pengingat Grup* ➝ *!setgremind [tanggal] [jam] [pesan]*  
 📜 *Lihat Pengingat* ➝ *!listremind*  
 ❌ *Hapus Pengingat* ➝ *!cancelremind [ID]*  
+❌ *Stop Reminder Berulang* ➝ *!stopremind*
 🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat*  
 
 👨‍🏫 *MANAJEMEN GURU*  
@@ -468,9 +473,6 @@ async function translateText(textMessage, remoteJid, sock) {
 }
 
 
-
-
-
 let gameAcakHuruf = {}; // { chatId: { kata: "komputer", jawaban: "komputer", pemain: "userId" } }
 let poinUser = {}; // { "userId": 10 }
 let levelUser = {}; // { "userId": 1 }
@@ -514,29 +516,66 @@ function startAcakHuruf(remoteJid, sender, sock) {
 function checkJawaban(remoteJid, sender, textMessage, sock) {
   if (!gameAcakHuruf[remoteJid]) {
     sock.sendMessage(remoteJid, {
-      text: "⚠️ Tidak ada permainan aktif! Mulai dengan *!acakhuruf*.",
+      text: "⚠️ Tidak ada permainan aktif! Mulai dengan *!acakhuruf* atau *!tantang @user*.",
     });
     return;
   }
 
-  let jawabanUser = textMessage.split(" ")[1].toLowerCase();
   let game = gameAcakHuruf[remoteJid];
+
+  if (game.giliran && game.giliran !== sender) {
+    sock.sendMessage(remoteJid, {
+      text: `⚠️ Sekarang giliran @${
+        game.giliran.split("@")[0]
+      }! Tunggu giliranmu.`,
+      mentions: [game.giliran],
+    });
+    return;
+  }
+
+  let parts = textMessage.split(" ");
+  if (parts.length < 2) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Gunakan *!jhuruf [jawaban]* untuk menjawab!",
+    });
+    return;
+  }
+
+  let jawabanUser = parts[1].toLowerCase();
 
   if (jawabanUser === game.jawaban) {
     let poin = (poinUser[sender] || 0) + 10;
     poinUser[sender] = poin;
-
     let level = Math.floor(poin / 50) + 1;
     levelUser[sender] = level;
 
     sock.sendMessage(remoteJid, {
-      text: `✅ *Benar!* 🎉  
-+10 Poin untuk *${sender}*!  
-Total Poin: *${poin}*  
-📈 Level: *${level}*`,
+      text: `✅ *Benar!* 🎉\n+10 Poin untuk *@${
+        sender.split("@")[0]
+      }*!\nTotal Poin: *${poin}*\n📈 Level: *${level}*`,
+      mentions: [sender],
     });
 
-    delete gameAcakHuruf[remoteJid];
+    // 🔥 Pilih soal baru dan ganti giliran ke pemain berikutnya
+    let nextPlayer = sender === game.pemain ? game.lawan : game.pemain;
+    let { kata, hurufAcak } = pilihKata();
+
+    // Update permainan dengan soal baru
+    gameAcakHuruf[remoteJid] = {
+      kata,
+      jawaban: kata,
+      pemain: game.pemain,
+      lawan: game.lawan,
+      giliran: nextPlayer, // Giliran pindah ke pemain berikutnya
+    };
+
+    // 🔥 Kirim soal baru ke pemain selanjutnya dengan mention
+    sock.sendMessage(remoteJid, {
+      text: `🎭 *Giliran pemain selanjutnya!*  
+Susun kata dari huruf berikut: *${hurufAcak}*  
+⏳ Jawab dengan *!jhuruf [kata]*`,
+      mentions: [nextPlayer],
+    });
   } else {
     sock.sendMessage(remoteJid, { text: "❌ *Salah!* Coba lagi!" });
   }
@@ -600,22 +639,54 @@ function challengePlayer(remoteJid, sender, opponentId, sock) {
     jawaban: kata,
     pemain: sender,
     lawan: opponentId,
+    giliran: sender, // Pemain pertama yang memulai
+    pemenang: null,
   };
 
   sock.sendMessage(remoteJid, {
-    text: `🔥 *Duel 1v1!*  
+    text: `🔥 *Duel 1v1 Dimulai!*  
+👤 *${sender.split("@")[0]}* vs *${opponentId.split("@")[0]}*  
 🎭 Susun kata dari huruf: *${hurufAcak}*  
-⏳ Jawab dengan *!jhuruf [kata]*`,
+⏳ Giliran: *${sender.split("@")[0]}*  
+Jawab dengan *!jhuruf [kata]*`,
   });
 
   setTimeout(() => {
-    if (gameAcakHuruf[remoteJid]) {
+    if (gameAcakHuruf[remoteJid] && !gameAcakHuruf[remoteJid].pemenang) {
       sock.sendMessage(remoteJid, {
-        text: `⏳ Waktu habis! Jawaban: *${gameAcakHuruf[remoteJid].jawaban}*`,
+        text: `⏳ Waktu habis! Tidak ada pemenang! Jawaban: *${gameAcakHuruf[remoteJid].jawaban}*`,
       });
       delete gameAcakHuruf[remoteJid];
     }
-  }, 30000);
+  }, 60000);
+}
+
+function startSurvival(remoteJid, sender, sock) {
+  let { kata, hurufAcak } = pilihKata();
+  gameAcakHuruf[remoteJid] = {
+    kata,
+    jawaban: kata,
+    pemain: sender,
+    mode: "survival",
+    pemenang: null,
+  };
+
+  sock.sendMessage(remoteJid, {
+    text: `🔥 *Survival Mode!*  \n🎭 Susun kata dari huruf berikut: *${hurufAcak}*  \n⏳ Jawab dengan *!jhuruf [kata]* dalam 20 detik!`,
+  });
+
+  setTimeout(() => {
+    if (
+      gameAcakHuruf[remoteJid] &&
+      gameAcakHuruf[remoteJid].mode === "survival" &&
+      !gameAcakHuruf[remoteJid].pemenang
+    ) {
+      sock.sendMessage(remoteJid, {
+        text: `⏳ Waktu habis! Permainan selesai! Jawaban: *${gameAcakHuruf[remoteJid].jawaban}*`,
+      });
+      delete gameAcakHuruf[remoteJid];
+    }
+  }, 20000);
 }
 
 
@@ -655,17 +726,18 @@ const searchBingNoApi = async (query, from, sock) => {
 };
 
 
-
 // Tag Semua Orang
 const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
   try {
     const groupMetadata = await sock.groupMetadata(from);
     const participants = groupMetadata.participants.map((p) => p.id);
 
+    // Buat daftar mention yang terlihat
+    const mentionText = participants.map((id) => `@${id.split("@")[0]}`).join(" ");
+
     await sock.sendMessage(from, {
-      text: `*${customMessage}*`, // Hanya menampilkan pesan tanpa nama yang terlihat
-      mentions: participants, // Tetap mention semua anggota secara tersembunyi
-      contextInfo: { mentionedJid: participants }, // Mengaktifkan mention tersembunyi
+      text: `*${customMessage}*\n\n${mentionText}`, // Menampilkan mention secara eksplisit
+      mentions: participants, // Mention tetap aktif agar notifikasi dikirim
     });
   } catch {
     sock.sendMessage(from, {
@@ -1037,7 +1109,7 @@ const setReminder = (textMessage, remoteJid, sender, sock, isGroup = false) => {
 
   // Set timeout untuk mengirimkan reminder saat waktunya tiba
   setTimeout(() => {
-    sock.sendMessage(remoteJid, { text: `🔔 *Reminder!* ${message}` });
+    sock.sendMessage(remoteJid, { text: `🔔 *Reminder!*\n ${message}` });
   }, reminderTime - now);
 };
 
@@ -1065,12 +1137,11 @@ const listReminders = (remoteJid, sock) => {
   sock.sendMessage(remoteJid, { text: message });
 };
 
-// Fungsi untuk menghapus reminder berdasarkan ID (urutan)
 const cancelReminder = (textMessage, remoteJid, sock) => {
   const args = textMessage.split(" ");
-  if (args.length < 2) {
+  if (args.length < 2 || isNaN(args[1])) {
     sock.sendMessage(remoteJid, {
-      text: "⚠️ Gunakan format *!cancelremind <ID>*",
+      text: "⚠️ Gunakan format *!cancelremind <nomor>* untuk menghapus reminder!",
     });
     return;
   }
@@ -1078,9 +1149,16 @@ const cancelReminder = (textMessage, remoteJid, sock) => {
   const id = parseInt(args[1]) - 1;
   let reminders = loadReminders();
 
+  if (!Array.isArray(reminders)) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Tidak dapat memuat daftar reminder!",
+    });
+    return;
+  }
+
   if (id < 0 || id >= reminders.length) {
     sock.sendMessage(remoteJid, {
-      text: `⚠️ Reminder dengan ID *${args[1]}* tidak ditemukan!`,
+      text: `⚠️ Reminder dengan nomor *${args[1]}* tidak ditemukan!`,
     });
     return;
   }
@@ -1089,9 +1167,10 @@ const cancelReminder = (textMessage, remoteJid, sock) => {
   saveReminders(reminders);
 
   sock.sendMessage(remoteJid, {
-    text: `✅ Reminder *${args[1]}* telah dihapus!`,
+    text: `✅ Reminder nomor *${args[1]}* telah dihapus!`,
   });
 };
+
 
 // Fungsi untuk membuat reminder berulang
 const setRepeatReminder = (
@@ -1139,7 +1218,7 @@ const setRepeatReminder = (
 
   // Simpan interval baru ke dalam repeatReminders
   repeatReminders[sender] = setInterval(() => {
-    sock.sendMessage(remoteJid, { text: `🔔 *Reminder Berulang!* ${message}` });
+    sock.sendMessage(remoteJid, { text: `🔔 *Reminder Berulang!*\n ${message}` });
   }, timeMs);
 
   sock.sendMessage(remoteJid, {
@@ -1147,16 +1226,35 @@ const setRepeatReminder = (
   });
 };
 
-const stopRepeatReminder = (remoteJid, sender, sock) => {
-  if (repeatReminders[sender]) {
-    clearInterval(repeatReminders[sender]);
-    delete repeatReminders[sender];
+const stopRepeatReminder = (remoteJid, sender, textMessage, sock) => {
+  let parts = textMessage.split(" ");
+  if (parts.length < 2 || isNaN(parts[1])) {
     sock.sendMessage(remoteJid, {
-      text: "🛑 Reminder berulang telah dihentikan!",
+      text: "⚠️ Gunakan *!stopremind [nomor]* untuk menghentikan reminder tertentu! Contoh: *!stopremind 1*",
+    });
+    return;
+  }
+
+  let reminderIndex = parseInt(parts[1], 10) - 1; // Konversi ke index array (dimulai dari 0)
+
+  if (repeatReminders[sender] && repeatReminders[sender][reminderIndex]) {
+    let reminder = repeatReminders[sender][reminderIndex];
+
+    clearInterval(reminder.intervalID);
+    repeatReminders[sender].splice(reminderIndex, 1); // Hapus reminder dari array
+
+    if (repeatReminders[sender].length === 0) {
+      delete repeatReminders[sender]; // Hapus user jika tidak ada reminder tersisa
+    }
+
+    sock.sendMessage(remoteJid, {
+      text: `🛑 Reminder #${reminderIndex + 1} telah dihentikan!`,
     });
   } else {
     sock.sendMessage(remoteJid, {
-      text: "⚠️ Tidak ada reminder berulang yang aktif!",
+      text: `⚠️ Reminder #${
+        reminderIndex + 1
+      } tidak ditemukan atau tidak aktif!`,
     });
   }
 };

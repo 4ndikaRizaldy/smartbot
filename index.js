@@ -23,24 +23,33 @@ moment.locale("id");
 let guessingGame = {};
 let logicGame = {};
 let botActive = true; //default aktif
+let startTime = Date.now(); // Simpan waktu saat bot dihidupkan
 
 // 🔹 Fungsi untuk menangani auto response dengan mention
 async function handleAutoResponse(message, remoteJid, sender, sock) {
+  if (!autoResponses || autoResponses.length === 0) return; // 🔹 Cek jika autoResponses kosong
+
   const lowerMessage = message.toLowerCase();
 
-  for (const auto of autoResponses) {
-    if (lowerMessage.includes(auto.keyword)) {
-      const responseText = `@${sender.split("@")[0]} ${auto.response}`;
+  try {
+    const foundAuto = autoResponses.find((auto) =>
+      lowerMessage.includes(auto.keyword)
+    );
+
+    if (foundAuto) {
+      const responseText = `@${sender.split("@")[0]} ${foundAuto.response}`;
 
       await sock.sendMessage(remoteJid, {
         text: responseText,
         mentions: [sender], // Mentions pengguna
       });
-      return;
     }
+  } catch (error) {
+    console.error("❌ Gagal mengirim pesan:", error);
   }
 }
 
+// STARTBOT/HIDUPKAN BOT
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
   const sock = makeWASocket({ auth: state, printQRInTerminal: true });
@@ -52,47 +61,46 @@ async function startBot() {
     else if (update.connection === "open") console.log("✅ Bot siap!");
   });
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-sock.ev.on("group-participants.update", async (update) => {
-  console.log("🔄 Update diterima:", update); // Debugging log
+  sock.ev.on("group-participants.update", async (update) => {
+    console.log("🔄 Update diterima:", update); // Debugging log
 
-  const { id, participants, action } = update;
+    const { id, participants, action } = update;
 
-  for (let participant of participants) {
-    let userNumber = participant.replace("@s.whatsapp.net", "");
+    for (let participant of participants) {
+      let userNumber = participant.replace("@s.whatsapp.net", "");
 
-    if (action === "add") {
-      console.log(`✅ Deteksi anggota baru: @${userNumber}`);
+      if (action === "add") {
+        console.log(`✅ Deteksi anggota baru: @${userNumber}`);
 
-      await delay(2000); // Delay untuk memastikan update sudah stabil
+        await delay(2000); // Delay untuk memastikan update sudah stabil
 
-      let welcomeMessage = `👋 *Selamat datang @${userNumber}!*  
+        let welcomeMessage = `👋 *Selamat datang @${userNumber}!*  
 Semoga betah di grup ini. Jangan lupa baca aturan ya! 😊`;
 
-      await sock.sendMessage(id, {
-        text: welcomeMessage,
-        mentions: [participant],
-      });
+        await sock.sendMessage(id, {
+          text: welcomeMessage,
+          mentions: [participant],
+        });
 
-      console.log("📩 Pesan selamat datang dikirim ke:", userNumber);
-    } else if (action === "remove") {
-      console.log(`❌ Deteksi anggota keluar: @${userNumber}`);
+        console.log("📩 Pesan selamat datang dikirim ke:", userNumber);
+      } else if (action === "remove") {
+        console.log(`❌ Deteksi anggota keluar: @${userNumber}`);
 
-      await delay(2000); // Delay untuk menghindari bug
-      let goodbyeMessage = `😢 *Selamat tinggal @${userNumber}!*  
+        await delay(2000); // Delay untuk menghindari bug
+        let goodbyeMessage = `😢 *Selamat tinggal @${userNumber}!*  
 Semoga sukses dan sampai jumpa di lain waktu!`;
 
-      await sock.sendMessage(id, {
-        text: goodbyeMessage,
-        mentions: [participant],
-      });
+        await sock.sendMessage(id, {
+          text: goodbyeMessage,
+          mentions: [participant],
+        });
 
-      console.log("📩 Pesan selamat tinggal dikirim ke:", userNumber);
+        console.log("📩 Pesan selamat tinggal dikirim ke:", userNumber);
+      }
     }
-  }
-});
-
+  });
 
   // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
@@ -111,6 +119,14 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
     // **Filter agar bot tidak merespons dirinya sendiri**
     if (msg.key.fromMe) return;
 
+    // **Dapatkan timestamp pesan**
+    const messageTimestamp = msg.messageTimestamp * 1000; // Ubah ke milidetik
+
+    // **Cek apakah pesan dikirim setelah bot dihidupkan**
+    if (messageTimestamp < startTime) {
+      console.log("⏳ Mengabaikan pesan lama sebelum bot aktif.");
+      return;
+    }
     // Perintah untuk menyalakan/mematikan bot
     if (textMessage === "!on") {
       botActive = true;
@@ -339,6 +355,7 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
   checkGroupSchedule(sock); // Mulai cek jadwal otomatis
 }
 
+// TAMPILAN MENU
 const showMenu = (from, sock) => {
   const menuText = `
 ✨ *SMARTBOT MENU* ✨
@@ -390,17 +407,18 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 ❌ *Stop Reminder Berulang* ➝ *!stopremind*
 🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat*  
 
-👨‍🏫 *MANAJEMEN GURU*  
+📚 *MANAJEMEN GURU & AUTO-RESPONSE*  
 ━━━━━━━━━━━━━━━━━━  
+👨‍🏫 *MANAJEMEN GURU*  
 ✍️ *Tambah Guru* ➝ *!tambahguru [nomor]*  
 📜 *Daftar Guru* ➝ *!listguru*  
 ❌ *Hapus Guru* ➝ *!hapusguru [nomor]*  
 
 📖 *MANAJEMEN AUTO-RESPONSE*  
-━━━━━━━━━━━━━━━━━━  
 🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
 📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
-🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*  
+🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*
+ 
 
 👥 *GRUP & ADMIN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -421,58 +439,179 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
   sock.sendMessage(from, { text: menuText });
 };
 
-
-// Fungsi untuk menerjemahkan teks
-async function translateText(textMessage, remoteJid, sock) {
+/* 📌 *INFO & UTILITAS* 
+🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
+🔹 *!ping* ➝ 🏓 Mengecek apakah bot aktif  
+🔹 *!jumlahanggota* ➝ 👥 Menampilkan jumlah anggota grup  
+🔹 *!shortlink [URL]* ➝ 🔗 Memperpendek link  
+🔹 *!qrcode [teks]* ➝ 📷 Membuat Barcode  
+*/
+/* AWAL KODE INFO & UTILITAS*/
+// Fungsi untuk menghitung jumlah anggota grup
+const countGroupMembers = async (from, sock) => {
   try {
-    const args = textMessage.split(" ");
+    const groupMetadata = await sock.groupMetadata(from);
+    sock.sendMessage(from, {
+      text: `👥 Jumlah anggota grup: ${groupMetadata.participants.length}`,
+    });
+  } catch {
+    sock.sendMessage(from, {
+      text: "⚠️ Perintah ini hanya bisa digunakan di grup!",
+    });
+  }
+};
 
-    // Validasi format input
-    if (args.length < 3) {
-      await sock.sendMessage(remoteJid, {
-        text: "⚠️ Format salah! Contoh: `!translate en Halo dunia. Apa kabar?` \nKetik `!kodenegara` untuk melihat kode bahasa yang tersedia.",
-      });
-      return;
-    }
-
-    const lang = args[1]; // Ambil kode bahasa
-    const text = args.slice(2).join(" "); // Gabungkan teks setelah kode bahasa
-
-    // Periksa apakah kode bahasa valid
-    if (!validLanguages.includes(lang)) {
-      await sock.sendMessage(remoteJid, {
-        text: "❌ Kode bahasa tidak valid! Pastikan kode bahasa yang dimasukkan benar.",
-      });
-      return;
-    }
-
-    // Pecah teks menjadi kalimat berdasarkan tanda baca
-    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
-
-    // Terjemahkan setiap kalimat secara terpisah
-    const translatedSentences = await Promise.all(
-      sentences.map(async (sentence) => {
-        const result = await translate(sentence.trim(), { to: lang });
-        return result.text;
-      })
+// Shortlink
+async function shortLink(url, remoteJid, sock) {
+  try {
+    const response = await fetch(
+      `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`
     );
+    const shortUrl = await response.text();
+    sock.sendMessage(remoteJid, { text: `🔗 *Shortened URL:* ${shortUrl}` });
+  } catch (error) {
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal memperpendek URL." });
+  }
+}
 
-    const translatedText = translatedSentences.join(" "); // Gabungkan hasil terjemahan
+// Buat QR Code
+const QRCode = require("qrcode");
 
-    // Kirim hasil terjemahan
-    await sock.sendMessage(remoteJid, {
-      text: `🔄 Terjemahan (${lang}): ${translatedText}`,
+async function generateQRCode(text, remoteJid, sock) {
+  try {
+    const qrCodeDataURL = await QRCode.toDataURL(text, {
+      errorCorrectionLevel: "H",
     });
 
-  } catch (error) {
-    console.error("❌ Error saat menerjemahkan:", error);
+    const base64Data = qrCodeDataURL.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+
     await sock.sendMessage(remoteJid, {
-      text: "❌ Gagal menerjemahkan teks. Pastikan kode bahasa benar!",
+      image: buffer,
+      caption: `✅ QR Code berhasil dibuat untuk: ${text}`,
+    });
+  } catch (error) {
+    console.error("Gagal membuat QR Code:", error);
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Gagal membuat QR Code. Coba lagi!",
     });
   }
 }
 
+/* AKHIR KODE INFO & UTILITAS*/
 
+
+/* 🎮 *PERMAINAN & TEBAK-TEBAKAN* 
+🎲 *Tebak Angka* ➝ *!tebakangka* | *!jangka [angka]*  
+🧠 *Tebak Logika* ➝ *!tebaklogika* | *!jlogika [jawaban]* | *!kluelogika*  
+🔠 *Acak Huruf* ➝ *!acakhuruf* | *!jhuruf [kata]*  
+⚔️ *1vs1 Acak Huruf* ➝ *!tantang @username*  
+🔥 *Survival Mode* ➝ *!survival*  
+🏆 *Leaderboard* ➝ *!leaderboard*  
+🎖 *Rank & Hadiah Virtual* ➝ *!rank*  */
+/* AWAL 🎮 *PERMAINAN & TEBAK-TEBAKAN*  */
+// TEBAK ANGKA
+const startGuessingGame = (from, sock) => {
+  const number = Math.floor(Math.random() * 10) + 1;
+  guessingGame[from] = number;
+  sock.sendMessage(from, {
+    text: "🎲 Tebak angka dari 1 hingga 10! Gunakan perintah *!jangka X* untuk menjawab.",
+  });
+};
+
+// 🔹 Fungsi untuk mengecek jawaban tebak angka dengan klue & mention pengguna
+const checkGuess = (message, from, sender, sock) => {
+  const input = message.split(" ")[1];
+  const answer = parseInt(input);
+
+  if (isNaN(answer)) {
+    sock.sendMessage(from, {
+      text: `⚠️ *@${sender.split("@")[0]}*, jawaban harus angka!`,
+      mentions: [sender],
+    });
+    return;
+  }
+
+  if (!guessingGame[from]) {
+    sock.sendMessage(from, {
+      text: "⚠️ Kamu belum memulai permainan! Ketik *!tebakangka* untuk mulai.",
+    });
+    return;
+  }
+
+  const correctNumber = guessingGame[from];
+
+  if (answer === correctNumber) {
+    sock.sendMessage(from, {
+      text: `🎉 *@${
+        sender.split("@")[0]
+      }* benar! Angkanya adalah *${correctNumber}*. Selamat!`,
+      mentions: [sender],
+    });
+    delete guessingGame[from]; // Reset game setelah jawaban benar
+  } else {
+    let clue =
+      answer > correctNumber ? "Terlalu besar! 🔽" : "Terlalu kecil! 🔼";
+    sock.sendMessage(from, {
+      text: `❌ *@${sender.split("@")[0]}*, salah! Coba lagi. ${clue}`,
+      mentions: [sender],
+    });
+  }
+};
+
+// TEBAK LOGIKA
+const startLogicGame = (from, sock) => {
+  const randomQuestion =
+    logicQuestions[Math.floor(Math.random() * logicQuestions.length)];
+  logicGame[from] = randomQuestion;
+  sock.sendMessage(from, {
+    text: `🧠 *Tebak Logika!*\n\n❓ ${randomQuestion.question}\n\nGunakan *!jlogika [jawaban]* untuk menjawab.`,
+  });
+};
+
+// 🔹 Fungsi untuk Mengecek Jawaban Tebak Logika
+const checkLogicAnswer = (message, from, sender, sock) => {
+  const input = message.split(" ").slice(1).join(" ").toLowerCase();
+
+  if (!logicGame[from]) {
+    sock.sendMessage(from, {
+      text: "⚠️ Kamu belum memulai permainan! Ketik *!tebaklogika* untuk mulai.",
+    });
+    return;
+  }
+
+  const correctAnswer = logicGame[from].answer.toLowerCase();
+
+  if (input === correctAnswer) {
+    sock.sendMessage(from, {
+      text: `🎉 *@${
+        sender.split("@")[0]
+      }* benar! Jawabannya adalah *${correctAnswer}*. Selamat!`,
+      mentions: [sender],
+    });
+    delete logicGame[from]; // Reset game setelah jawaban benar
+  } else {
+    sock.sendMessage(from, {
+      text: `❌ *@${sender.split("@")[0]}*, jawaban salah! Coba lagi.`,
+      mentions: [sender],
+    });
+  }
+};
+
+// 🔹 Fungsi untuk Memberikan Klue Tebak Logika
+const giveLogicClue = (from, sock) => {
+  if (!logicGame[from]) {
+    sock.sendMessage(from, {
+      text: "⚠️ Tidak ada permainan yang sedang berlangsung! Ketik *!tebaklogika* untuk mulai.",
+    });
+    return;
+  }
+
+  const clue = logicGame[from].clue;
+  sock.sendMessage(from, { text: `💡 *Klue:* ${clue}` });
+};
+
+// TEBAK KATA
 let gameAcakHuruf = {}; // { chatId: { kata: "komputer", jawaban: "komputer", pemain: "userId" } }
 let poinUser = {}; // { "userId": 10 }
 let levelUser = {}; // { "userId": 1 }
@@ -689,231 +828,50 @@ function startSurvival(remoteJid, sender, sock) {
   }, 20000);
 }
 
+/* AKHIR 🎮 *PERMAINAN & TEBAK-TEBAKAN*  */
 
-// Pencarian BING
-const cheerio = require("cheerio");
-
-const searchBingNoApi = async (query, from, sock) => {
-  try {
-    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(
-      query
-    )}`;
-    const response = await axios.get(searchUrl, { timeout: 10000 });
-    const $ = cheerio.load(response.data);
-
-    let results = [];
-    $("li.b_algo h2 a").each((i, el) => {
-      if (i < 3) {
-        const title = $(el).text();
-        const link = $(el).attr("href");
-        results.push(`🔍 *${title}*\n🔗 ${link}`);
-      }
-    });
-
-    if (results.length === 0) {
-      sock.sendMessage(from, { text: "⚠️ Tidak ada hasil ditemukan." });
-      return;
-    }
-
-    const searchText = `🔎 *Hasil Pencarian Bing:*\n\n${results.join("\n\n")}`;
-    sock.sendMessage(from, { text: searchText });
-  } catch (error) {
-    console.error("Error Bing Search:", error.message);
-    sock.sendMessage(from, {
-      text: "⚠️ Terjadi kesalahan saat mencari di Bing.",
-    });
-  }
-};
-
-
-// Tag Semua Orang
-const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
-  try {
-    const groupMetadata = await sock.groupMetadata(from);
-    const participants = groupMetadata.participants.map((p) => p.id);
-
-    // Buat daftar mention yang terlihat
-    const mentionText = participants.map((id) => `@${id.split("@")[0]}`).join(" ");
-
-    await sock.sendMessage(from, {
-      text: `*${customMessage}*\n\n${mentionText}`, // Menampilkan mention secara eksplisit
-      mentions: participants, // Mention tetap aktif agar notifikasi dikirim
-    });
-  } catch {
-    sock.sendMessage(from, {
-      text: "⚠️ Perintah ini hanya bisa digunakan di grup!",
-    });
-  }
-};
-
-// 🔹 Fungsi untuk mencari ringkasan artikel Wikipedia
-const searchWikipedia = async (query, from, sock) => {
-  try {
-    const apiUrl = `https://id.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-      query
-    )}`;
-    const response = await axios.get(apiUrl);
-    const data = response.data;
-
-    if (data.type === "disambiguation") {
-      sock.sendMessage(from, {
-        text: `⚠️ Hasil pencarian terlalu luas. Coba lebih spesifik!\n\n🔗 Lihat lebih lanjut: ${data.content_urls.desktop.page}`,
-      });
-      return;
-    }
-
-    const wikiText = `📖 *Wikipedia*\n\n*Judul:* ${data.title}\n\n${data.extract}\n\n🔗 Baca selengkapnya: ${data.content_urls.desktop.page}`;
-
-    sock.sendMessage(from, { text: wikiText });
-  } catch (error) {
-    sock.sendMessage(from, {
-      text: "⚠️ Maaf, artikel tidak ditemukan atau terjadi kesalahan.",
-    });
-  }
-};
-
-// 🔹 Fungsi untuk menghitung jumlah anggota grup
-const countGroupMembers = async (from, sock) => {
-  try {
-    const groupMetadata = await sock.groupMetadata(from);
-    sock.sendMessage(from, {
-      text: `👥 Jumlah anggota grup: ${groupMetadata.participants.length}`,
-    });
-  } catch {
-    sock.sendMessage(from, {
-      text: "⚠️ Perintah ini hanya bisa digunakan di grup!",
-    });
-  }
-};
-
-// 🔹 Fungsi untuk memulai game tebak angka
-const startGuessingGame = (from, sock) => {
-  const number = Math.floor(Math.random() * 10) + 1;
-  guessingGame[from] = number;
-  sock.sendMessage(from, {
-    text: "🎲 Tebak angka dari 1 hingga 10! Gunakan perintah *!jangka X* untuk menjawab.",
-  });
-};
-
-// 🔹 Fungsi untuk mengecek jawaban tebak angka dengan klue & mention pengguna
-const checkGuess = (message, from, sender, sock) => {
-  const input = message.split(" ")[1];
-  const answer = parseInt(input);
-
-  if (isNaN(answer)) {
-    sock.sendMessage(from, {
-      text: `⚠️ *@${sender.split("@")[0]}*, jawaban harus angka!`,
-      mentions: [sender],
-    });
-    return;
-  }
-
-  if (!guessingGame[from]) {
-    sock.sendMessage(from, {
-      text: "⚠️ Kamu belum memulai permainan! Ketik *!tebakangka* untuk mulai.",
-    });
-    return;
-  }
-
-  const correctNumber = guessingGame[from];
-
-  if (answer === correctNumber) {
-    sock.sendMessage(from, {
-      text: `🎉 *@${
-        sender.split("@")[0]
-      }* benar! Angkanya adalah *${correctNumber}*. Selamat!`,
-      mentions: [sender],
-    });
-    delete guessingGame[from]; // Reset game setelah jawaban benar
-  } else {
-    let clue =
-      answer > correctNumber ? "Terlalu besar! 🔽" : "Terlalu kecil! 🔼";
-    sock.sendMessage(from, {
-      text: `❌ *@${sender.split("@")[0]}*, salah! Coba lagi. ${clue}`,
-      mentions: [sender],
-    });
-  }
-};
-
-// 🔹 Fungsi untuk menampilkan tanggal dan waktu dalam bahasa Indonesia sesuai zona waktu pengguna
+/* 📚 *INFO & PENGETAHUAN*  
+━━━━━━━━━━━━━━━━━━  
+📅 *Tanggal* ➝ *!tanggal* (Masehi & Hijriah)  
+💡 *Fakta Unik* ➝ *!faktaunik*  
+📖 *Quran* ➝ *!quran [surat:ayat]*  
+🌍 *Wikipedia* ➝ *!wiki [pertanyaan]*  
+🔍 *Pencarian Bing* ➝ *!bing [pertanyaan]*  
+📜 *Pantun* ➝ *!pantun*  
+🌟 *Motivasi* ➝ *!motivasi*  */
+/* AWAL */
+// TANGGAL
 const sendDate = (from, sock) => {
-  const userOffset = moment().utcOffset(); // Ambil offset pengguna dalam menit
-  let timeZone = "WIB"; // Default WIB
-  let offsetHours = userOffset / 60; // Konversi menit ke jam
+  // Ambil zona waktu pengguna
+  const userTimezone = moment.tz.guess();
 
-  if (offsetHours === 8) {
-    timeZone = "WITA";
-  } else if (offsetHours === 9) {
-    timeZone = "WIT";
-  }
+  // Tentukan zona waktu Indonesia
+  const timeZones = { 7: "WIB", 8: "WITA", 9: "WIT" };
+  const timeOffset = moment().tz(userTimezone).utcOffset() / 60;
+  const timeZone = timeZones[timeOffset] || "Zona Waktu Tidak Diketahui";
 
-  const masehi = moment().format("dddd, D MMMM YYYY");
-  const hijri = moment().format("D MMMM YYYY");
-  const time = moment().format("HH:mm:ss");
+  // Format tanggal Masehi dalam bahasa Indonesia
+  const masehi = moment()
+    .tz(userTimezone)
+    .locale("id")
+    .format("dddd, D MMMM YYYY");
 
-  const dateText = `📅 *Tanggal dan Waktu Saat Ini*:\n📆 Masehi: ${masehi}\n🕌 Hijriah: ${hijri}\n⏰ Waktu: ${time} ${timeZone}`;
+  // Format waktu
+  const time = moment().tz(userTimezone).format("HH:mm:ss");
+
+  // Kirim pesan tanpa Hijriah
+  const dateText = `📅 *Tanggal dan Waktu Saat Ini*:\n📆 Masehi: ${masehi}\n⏰ Waktu: ${time} ${timeZone}`;
+
   sock.sendMessage(from, { text: dateText });
 };
 
-// 🔹 Fungsi untuk mengirimkan fakta unik dengan sumber referensi
+// FAKTA UNIK
 const sendFaktaUnik = (from, sock) => {
   const randomFakta = getRandomFakta();
   sock.sendMessage(from, { text: randomFakta });
 };
 
-// 🔹 Fungsi untuk Memulai Tebak Logika
-const startLogicGame = (from, sock) => {
-  const randomQuestion =
-    logicQuestions[Math.floor(Math.random() * logicQuestions.length)];
-  logicGame[from] = randomQuestion;
-  sock.sendMessage(from, {
-    text: `🧠 *Tebak Logika!*\n\n❓ ${randomQuestion.question}\n\nGunakan *!jlogika [jawaban]* untuk menjawab.`,
-  });
-};
-
-// 🔹 Fungsi untuk Mengecek Jawaban Tebak Logika
-const checkLogicAnswer = (message, from, sender, sock) => {
-  const input = message.split(" ").slice(1).join(" ").toLowerCase();
-
-  if (!logicGame[from]) {
-    sock.sendMessage(from, {
-      text: "⚠️ Kamu belum memulai permainan! Ketik *!tebaklogika* untuk mulai.",
-    });
-    return;
-  }
-
-  const correctAnswer = logicGame[from].answer.toLowerCase();
-
-  if (input === correctAnswer) {
-    sock.sendMessage(from, {
-      text: `🎉 *@${
-        sender.split("@")[0]
-      }* benar! Jawabannya adalah *${correctAnswer}*. Selamat!`,
-      mentions: [sender],
-    });
-    delete logicGame[from]; // Reset game setelah jawaban benar
-  } else {
-    sock.sendMessage(from, {
-      text: `❌ *@${sender.split("@")[0]}*, jawaban salah! Coba lagi.`,
-      mentions: [sender],
-    });
-  }
-};
-
-// 🔹 Fungsi untuk Memberikan Klue Tebak Logika
-const giveLogicClue = (from, sock) => {
-  if (!logicGame[from]) {
-    sock.sendMessage(from, {
-      text: "⚠️ Tidak ada permainan yang sedang berlangsung! Ketik *!tebaklogika* untuk mulai.",
-    });
-    return;
-  }
-
-  const clue = logicGame[from].clue;
-  sock.sendMessage(from, { text: `💡 *Klue:* ${clue}` });
-};
-
-// 🔹 Fungsi untuk menampilkan ayat Al-Qur'an dan artinya
+// AL QURAN DAN TERJEMAHAN
 const getQuranAyat = async (message, from, sock) => {
   try {
     const input = message.split(" ")[1]; // Format: !quran 2:255 (Surat:Ayat)
@@ -961,25 +919,141 @@ const getQuranAyat = async (message, from, sock) => {
   }
 };
 
-// Fungsi untuk mengirimkan pantun
-const sendPantun = (from, sock) => {
-  const randomPantun =
-    pantunList[Math.floor(Math.random() * pantunList.length)];
+// WIKIPEDIA
+const searchWikipedia = async (query, from, sock) => {
+  try {
+    // Encode the query to ensure it is URL-safe
+    const apiUrl = `https://id.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+      query
+    )}`;
+    const response = await axios.get(apiUrl);
+    const data = response.data;
 
-  // Format pantun dalam bentuk teks
-  const pantunText = `🎭 *Pantun untukmu!* 🎭\n\n${randomPantun.baris1}\n${randomPantun.baris2}\n${randomPantun.baris3}\n${randomPantun.baris4}`;
+    // Check for disambiguation or missing results
+    if (data.type === "disambiguation") {
+      sock.sendMessage(from, {
+        text: `⚠️ Hasil pencarian terlalu luas. Coba lebih spesifik!\n\n🔗 Lihat lebih lanjut: ${data.content_urls.desktop.page}`,
+      });
+      return;
+    }
 
-  // Kirim pantun ke pengguna
-  sock.sendMessage(from, { text: pantunText });
+    // Check if the response is valid and contains useful data
+    if (!data || !data.extract || !data.title) {
+      sock.sendMessage(from, {
+        text: "⚠️ Maaf, tidak ada ringkasan yang ditemukan untuk pencarian ini.",
+      });
+      return;
+    }
+
+    // Format the response text in a more readable way
+    const wikiText = `📖 *Wikipedia*\n\n*Judul:* ${data.title}\n\n${data.extract}\n\n🔗 Baca selengkapnya: ${data.content_urls.desktop.page}`;
+
+    // Send the response message to the user
+    sock.sendMessage(from, { text: wikiText });
+  } catch (error) {
+    // Handle different types of errors
+    if (error.response) {
+      // The API responded with an error
+      sock.sendMessage(from, {
+        text: `⚠️ Terjadi kesalahan saat mengambil data dari Wikipedia. Coba lagi nanti.`,
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      sock.sendMessage(from, {
+        text: `⚠️ Tidak ada respons dari Wikipedia. Pastikan koneksi internet stabil.`,
+      });
+    } else {
+      // Something else went wrong
+      sock.sendMessage(from, {
+        text: `⚠️ Terjadi kesalahan tak terduga. Coba lagi nanti.`,
+      });
+    }
+  }
 };
 
-// Motivasi
+// BING
+const cheerio = require("cheerio");
+
+const searchBingNoApi = async (query, from, sock) => {
+  try {
+    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(
+      query
+    )}`;
+    const response = await axios.get(searchUrl, { timeout: 10000 });
+    const $ = cheerio.load(response.data);
+
+    let results = [];
+    $("li.b_algo h2 a").each((i, el) => {
+      if (i < 3) {
+        const title = $(el).text();
+        const link = $(el).attr("href");
+        results.push(`🔍 *${title}*\n🔗 ${link}`);
+      }
+    });
+
+    if (results.length === 0) {
+      sock.sendMessage(from, { text: "⚠️ Tidak ada hasil ditemukan." });
+      return;
+    }
+
+    const searchText = `🔎 *Hasil Pencarian Bing:*\n\n${results.join("\n\n")}`;
+    sock.sendMessage(from, { text: searchText });
+  } catch (error) {
+    console.error("Error Bing Search:", error.message);
+    sock.sendMessage(from, {
+      text: "⚠️ Terjadi kesalahan saat mencari di Bing.",
+    });
+  }
+};
+
+// PANTUN
+const sendPantun = (from, sock) => {
+  // Memastikan pantunList tidak kosong
+  if (!pantunList || pantunList.length === 0) {
+    console.error("Pantun list is empty!");
+    sock.sendMessage(from, {
+      text: "⚠️ Maaf, tidak ada pantun yang tersedia.",
+    });
+    return;
+  }
+
+  try {
+    const randomPantun =
+      pantunList[Math.floor(Math.random() * pantunList.length)];
+
+    // Format pantun dalam bentuk teks
+    const pantunText = `🎭 *Pantun untukmu!* 🎭\n\n${randomPantun.baris1}\n${randomPantun.baris2}\n${randomPantun.baris3}\n${randomPantun.baris4}`;
+
+    // Kirim pantun ke pengguna
+    sock.sendMessage(from, { text: pantunText });
+  } catch (error) {
+    console.error("Error in sending pantun:", error.message);
+    sock.sendMessage(from, {
+      text: "⚠️ Terjadi kesalahan saat mengirim pantun.",
+    });
+  }
+};
+
+// MOTIVASI
 async function sendMotivation(remoteJid, sock) {
   try {
     const response = await fetch("https://zenquotes.io/api/random");
+
+    // Memeriksa status respons HTTP
+    if (!response.ok) {
+      throw new Error("Failed to fetch from API, status: " + response.status);
+    }
+
     const data = await response.json();
 
-    if (data && data.length > 0) {
+    // Memastikan data sesuai format yang diharapkan
+    if (
+      data &&
+      Array.isArray(data) &&
+      data.length > 0 &&
+      data[0].q &&
+      data[0].a
+    ) {
       const quote = `💡 *Motivasi Hari Ini:*\n\n"${data[0].q}"\n- ${data[0].a}`;
       sock.sendMessage(remoteJid, { text: quote });
     } else {
@@ -988,25 +1062,91 @@ async function sendMotivation(remoteJid, sock) {
       });
     }
   } catch (error) {
+    console.error("Error fetching motivation:", error.message); // Menambahkan log error untuk debugging
     sock.sendMessage(remoteJid, {
-      text: "⚠️ Gagal mengambil kutipan motivasi.",
+      text: "⚠️ Gagal mengambil kutipan motivasi. Silakan coba lagi nanti.",
     });
   }
 }
 
-//Shortlink
-async function shortLink(url, remoteJid, sock) {
+/* AKHIR */
+
+
+/* AWAL */
+/* 🔢 *MATEMATIKA*  
+━━━━━━━━━━━━━━━━━━  
+🧮 *Kalkulator* ➝ *!hitung [ekspresi]* (contoh: !hitung 5+3*2)   */
+
+
+
+/* 🌍 *BAHASA & TERJEMAHAN*  
+━━━━━━━━━━━━━━━━━━  
+🔄 *Terjemahan* ➝ *!translate [kode bahasa] [teks]* (contoh: !translate en Pantai)  
+🌏 *Kode Bahasa* ➝ *!kodenegara*  */
+
+// Fungsi untuk menerjemahkan teks
+async function translateText(textMessage, remoteJid, sock) {
   try {
-    const response = await fetch(
-      `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`
+    const args = textMessage.split(" ");
+
+    // Validasi format input
+    if (args.length < 3) {
+      await sock.sendMessage(remoteJid, {
+        text: "⚠️ Format salah! Contoh: `!translate en Halo dunia. Apa kabar?` \nKetik `!kodenegara` untuk melihat kode bahasa yang tersedia.",
+      });
+      return;
+    }
+
+    const lang = args[1]; // Ambil kode bahasa
+    const text = args.slice(2).join(" "); // Gabungkan teks setelah kode bahasa
+
+    // Periksa apakah kode bahasa valid
+    if (!validLanguages.includes(lang)) {
+      await sock.sendMessage(remoteJid, {
+        text: "❌ Kode bahasa tidak valid! Pastikan kode bahasa yang dimasukkan benar.",
+      });
+      return;
+    }
+
+    // Pecah teks menjadi kalimat berdasarkan tanda baca
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+
+    // Terjemahkan setiap kalimat secara terpisah
+    const translatedSentences = await Promise.all(
+      sentences.map(async (sentence) => {
+        const result = await translate(sentence.trim(), { to: lang });
+        return result.text;
+      })
     );
-    const shortUrl = await response.text();
-    sock.sendMessage(remoteJid, { text: `🔗 *Shortened URL:* ${shortUrl}` });
+
+    const translatedText = translatedSentences.join(" "); // Gabungkan hasil terjemahan
+
+    // Kirim hasil terjemahan
+    await sock.sendMessage(remoteJid, {
+      text: `🔄 Terjemahan (${lang}): ${translatedText}`,
+    });
   } catch (error) {
-    sock.sendMessage(remoteJid, { text: "⚠️ Gagal memperpendek URL." });
+    console.error("❌ Error saat menerjemahkan:", error);
+    await sock.sendMessage(remoteJid, {
+      text: "❌ Gagal menerjemahkan teks. Pastikan kode bahasa benar!",
+    });
   }
 }
 
+/* AKHIR */
+
+/* AWAL */
+/* GRUP DAN ADMIN */
+/* ⏰ *PENGINGAT (REMINDER)*  
+━━━━━━━━━━━━━━━━━━  
+📅 *Setel Pengingat* ➝ *!setremind [tanggal] [jam] [pesan]*  
+🏷️ *Setel Pengingat Grup* ➝ *!setgremind [tanggal] [jam] [pesan]*  
+📜 *Lihat Pengingat* ➝ *!listremind*  
+❌ *Hapus Pengingat* ➝ *!cancelremind [ID]*  
+❌ *Stop Reminder Berulang* ➝ *!stopremind*
+🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat* */  
+
+// REMINDER
 const fs = require("fs");
 const remindersFile = "reminders.json";
 let repeatReminders = {};
@@ -1171,7 +1311,6 @@ const cancelReminder = (textMessage, remoteJid, sock) => {
   });
 };
 
-
 // Fungsi untuk membuat reminder berulang
 const setRepeatReminder = (
   textMessage,
@@ -1218,7 +1357,9 @@ const setRepeatReminder = (
 
   // Simpan interval baru ke dalam repeatReminders
   repeatReminders[sender] = setInterval(() => {
-    sock.sendMessage(remoteJid, { text: `🔔 *Reminder Berulang!*\n ${message}` });
+    sock.sendMessage(remoteJid, {
+      text: `🔔 *Reminder Berulang!*\n ${message}`,
+    });
   }, timeMs);
 
   sock.sendMessage(remoteJid, {
@@ -1259,31 +1400,18 @@ const stopRepeatReminder = (remoteJid, sender, textMessage, sock) => {
   }
 };
 
-// Buat QR Code
-const QRCode = require("qrcode");
 
-async function generateQRCode(text, remoteJid, sock) {
-  try {
-    const qrCodeDataURL = await QRCode.toDataURL(text, {
-      errorCorrectionLevel: "H",
-    });
+/* 📚 *MANAJEMEN GURU & AUTO-RESPONSE*  
+━━━━━━━━━━━━━━━━━━  
+👨‍🏫 *MANAJEMEN GURU*  
+✍️ *Tambah Guru* ➝ *!tambahguru [nomor]*  
+📜 *Daftar Guru* ➝ *!listguru*  
+❌ *Hapus Guru* ➝ *!hapusguru [nomor]*  
 
-    const base64Data = qrCodeDataURL.split(",")[1];
-    const buffer = Buffer.from(base64Data, "base64");
-
-    await sock.sendMessage(remoteJid, {
-      image: buffer,
-      caption: `✅ QR Code berhasil dibuat untuk: ${text}`,
-    });
-  } catch (error) {
-    console.error("Gagal membuat QR Code:", error);
-    await sock.sendMessage(remoteJid, {
-      text: "⚠️ Gagal membuat QR Code. Coba lagi!",
-    });
-  }
-}
-
-//Ajrin Bot
+📖 *MANAJEMEN AUTO-RESPONSE*  
+🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
+📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
+🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]* */
 
 // **Memuat database guru dari file JSON**
 const loadTeachers = () => {
@@ -1486,6 +1614,64 @@ async function deleteLearnedResponse(textMessage, remoteJid, sock) {
   });
 }
 
+/* 👥 *GRUP & ADMIN*  
+━━━━━━━━━━━━━━━━━━  
+🔔 *Tag Semua* ➝ *!tagall [pesan opsional]*  
+📢 *Pengumuman* ➝ *!announce [pesan]*  
+🔓 *Buka/Tutup Grup* ➝ *!bukagrup* | *!tutupgrup*  
+⏰ *Jadwal Grup* ➝ *!jadwalbuka [jam]* | *!jadwaltutup [jam]* | *!cekjadwal*  
+➕ *Tambah Anggota* ➝ *!add [nomor]* | 🚪 *Keluarkan* ➝ *!remove [nomor]*  
+👤 *Promote/Demote Admin* ➝ *!promote [@user]* | *!demote [@user]*
+*/ 
+// Tag Semua Orang
+const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
+  try {
+    const groupMetadata = await sock.groupMetadata(from);
+    const participants = groupMetadata.participants.map((p) => p.id);
+
+    // Buat daftar mention yang terlihat
+    const mentionText = participants
+      .map((id) => `@${id.split("@")[0]}`)
+      .join(" ");
+
+    await sock.sendMessage(from, {
+      text: `*${customMessage}*\n\n${mentionText}`, // Menampilkan mention secara eksplisit
+      mentions: participants, // Mention tetap aktif agar notifikasi dikirim
+    });
+  } catch {
+    sock.sendMessage(from, {
+      text: "⚠️ Perintah ini hanya bisa digunakan di grup!",
+    });
+  }
+};
+
+// PENGUMUMAN
+async function announceToAll(remoteJid, sender, sock, message) {
+  try {
+    const groupMetadata = await sock.groupMetadata(remoteJid);
+    const participants = groupMetadata.participants.map((member) => member.id);
+
+    // Pastikan hanya admin yang bisa melakukan pengumuman
+    const groupAdmins = groupMetadata.participants
+      .filter((member) => member.admin)
+      .map((admin) => admin.id);
+
+    if (!groupAdmins.includes(sender)) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu bukan admin grup!",
+      });
+    }
+
+    await sock.sendMessage(remoteJid, {
+      text: `📢 *Pengumuman!*\n\n${message}`,
+      mentions: participants, // Mentions tanpa menampilkan nomor
+    });
+  } catch (error) {
+    console.error("Error sending announcement:", error);
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengirim pengumuman." });
+  }
+}
+
 // Buka tutup Grup
 async function setGroupRestriction(groupId, sock, isClosed) {
   try {
@@ -1661,31 +1847,12 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
   }
 }
 
-async function announceToAll(remoteJid, sender, sock, message) {
-  try {
-    const groupMetadata = await sock.groupMetadata(remoteJid);
-    const participants = groupMetadata.participants.map((member) => member.id);
 
-    // Pastikan hanya admin yang bisa melakukan pengumuman
-    const groupAdmins = groupMetadata.participants
-      .filter((member) => member.admin)
-      .map((admin) => admin.id);
-
-    if (!groupAdmins.includes(sender)) {
-      return sock.sendMessage(remoteJid, {
-        text: "⚠️ Kamu bukan admin grup!",
-      });
-    }
-
-    await sock.sendMessage(remoteJid, {
-      text: `📢 *Pengumuman!*\n\n${message}`,
-      mentions: participants, // Mentions tanpa menampilkan nomor
-    });
-  } catch (error) {
-    console.error("Error sending announcement:", error);
-    sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengirim pengumuman." });
-  }
-}
+/* 📩 *SARAN & MASUKAN*  
+━━━━━━━━━━━━━━━━━━  
+✍️ *Kirim Kritik* ➝ *!kritik*  
+📜 *Lihat Kritik* ➝ *!lihatkritik* 
+ */
 
 //feedback
 const feedbackFile = "feedback.json";
@@ -1753,8 +1920,6 @@ async function viewFeedback(remoteJid, sender, sock) {
     });
   }
 }
-
-// Auto Download
 
 
 startBot();

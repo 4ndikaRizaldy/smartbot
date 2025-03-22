@@ -419,7 +419,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 🏷️ *Setel Pengingat Grup* ➝ *!setgremind [tanggal] [jam] [pesan]*  
 📜 *Lihat Pengingat* ➝ *!listremind*  
 ❌ *Hapus Pengingat* ➝ *!cancelremind [ID]*  
-❌ *Stop Reminder Berulang* ➝ *!stopremind*
+❌ *Stop Reminder Berulang* ➝ *!stopremind*  
 🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat*  
 
 📚 *MANAJEMEN GURU & AUTO-RESPONSE*  
@@ -433,7 +433,6 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
 📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
 🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*
- 
 
 👥 *GRUP & ADMIN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -448,11 +447,19 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 ✍️ *Kirim Kritik* ➝ *!kritik*  
 📜 *Lihat Kritik* ➝ *!lihatkritik*  
 
-💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀  
-  `;
+🎲 *FITUR SERU*  
+━━━━━━━━━━━━━━━━━━  
+🎲 *Roll Dadu* ➝ *!roll*  
+💡 *Fakta Unik* ➝ *!fact*  
+😂 *Lelucon* ➝ *!joke*  
+⏳ *Countdown Event* ➝ *!countdown [tanggal] [jam]*  
+
+💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
+`;
 
   sock.sendMessage(from, { text: menuText });
 };
+
 
 /* 📌 *INFO & UTILITAS* 
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  

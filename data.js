@@ -146,6 +146,14 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ *!kritik* – ✍️ Kirim kritik/saran  
 ➤ *!lihatkritik* – 📜 Lihat kritik masuk  
 
+🎲 *FITUR SERU*  
+━━━━━━━━━━━━━━━━━━  
+🎲 *Roll Dadu* ➝ *!roll*  
+💡 *Fakta Unik* ➝ *!fact*  
+😂 *Lelucon* ➝ *!joke*  
+⏳ *Countdown Event* ➝ *!countdown [tanggal] [jam]*  
+
+
 🔹 *Gunakan perintah di atas untuk menikmati fitur SmartBot!* 🚀`,
   },
 

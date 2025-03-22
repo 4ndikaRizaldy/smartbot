@@ -351,6 +351,46 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
       await viewFeedback(remoteJid, sender, sock);
     }
 
+    // Menampilkan menu interaksi
+    else if (textMessage.startsWith("!tagdivisi")) {
+      tagDivisi(remoteJid, sock, textMessage);
+    } else if (textMessage.startsWith("!listdivisi")) {
+      listDivisi(remoteJid, sock);
+    } else if (textMessage.startsWith("!setdivisi")) {
+      const [_, user, divisi] = textMessage.split(" ");
+      addToDivisi(remoteJid, sock, user, divisi.toLowerCase());
+    } else if (textMessage.startsWith("!removedivisi")) {
+      const [_, user, divisi] = textMessage.split(" ");
+      removeFromDivisi(remoteJid, sock, user, divisi.toLowerCase());
+    } else if (textMessage.startsWith("!adddivisi")) {
+      const divisi = textMessage.replace("!adddivisi", "").trim().toLowerCase();
+      addDivisi(remoteJid, sock, divisi);
+    } else if (textMessage.startsWith("!removedivisi")) {
+      const args = textMessage.split(" ").slice(1); // Ambil parameter setelah perintah
+      if (args.length < 2) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Format salah! Gunakan: *!removedivisi @user [nama_divisi]*",
+        });
+        return;
+      }
+
+      const user = args[0].replace("@", "").trim(); // Ambil user tanpa '@'
+      const divisi = args.slice(1).join(" ").toLowerCase(); // Gabungkan kata setelah user sebagai nama divisi
+
+      console.log("📥 Perintah diterima: !removedivisi");
+      console.log("🔍 User:", user);
+      console.log("📂 Divisi yang ingin dihapus:", divisi);
+
+      if (!divisi) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Nama divisi tidak boleh kosong!",
+        });
+        return;
+      }
+
+      removeFromDivisi(remoteJid, sock, user, divisi);
+    }
+
     // TEST
     else if (textMessage.startsWith("!roll")) {
       rollDice(remoteJid, sock);
@@ -459,7 +499,6 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
   sock.sendMessage(from, { text: menuText });
 };
-
 
 /* 📌 *INFO & UTILITAS* 
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
@@ -2055,8 +2094,167 @@ const countdown = (remoteJid, sock, eventDate) => {
   }, 1000); // Setiap detik (1000 ms)
 };
 
+// Nama file untuk menyimpan data divisi
+const divisiFile = "divisiData.json";
+
+// Menyimpan data divisi ke dalam file JSON
+const saveDivisiData = (divisiList) => {
+  fs.writeFileSync(divisiFile, JSON.stringify(divisiList, null, 2));
+};
+
+// Membaca data divisi dari file JSON
+const loadDivisiData = () => {
+  if (fs.existsSync(divisiFile)) {
+    const data = fs.readFileSync(divisiFile);
+    return JSON.parse(data);
+  }
+  return {}; // Jika file tidak ada, kembalikan objek kosong
+};
+
+// Menambahkan divisi baru
+const addDivisi = (remoteJid, sock, divisi) => {
+  let divisiList = loadDivisiData();
+
+  if (divisiList[divisi]) {
+    sock.sendMessage(remoteJid, { text: `⚠️ Divisi *${divisi}* sudah ada.` });
+    return;
+  }
+
+  divisiList[divisi] = [];
+  saveDivisiData(divisiList);
+  sock.sendMessage(remoteJid, {
+    text: `✅ Divisi *${divisi}* berhasil dibuat.`,
+  });
+};
 
 
+// Menandai semua anggota dalam divisi tertentu
+const tagDivisi = async (remoteJid, sock, textMessage) => {
+  const args = textMessage.split(" ").slice(1);
+  if (args.length === 0) {
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Format salah! Gunakan: *!tagdivisi [nama_divisi]*",
+    });
+    return;
+  }
+
+  const divisi = args.join(" ").toLowerCase();
+  let divisiList = loadDivisiData();
+
+  if (!divisiList[divisi]) {
+    await sock.sendMessage(remoteJid, {
+      text: `⚠️ Divisi *${divisi.toUpperCase()}* tidak ditemukan.`,
+    });
+    return;
+  }
+
+  const anggota = divisiList[divisi];
+  if (!anggota || anggota.length === 0) {
+    await sock.sendMessage(remoteJid, {
+      text: `⚠️ Divisi *${divisi.toUpperCase()}* belum memiliki anggota.`,
+    });
+    return;
+  }
+
+  // **Format hanya menampilkan nomor atau username, tapi tetap bisa mention**
+  const mentions = anggota.map(
+    (user) => `${user.replace(/\D/g, "")}@s.whatsapp.net`
+  );
+  const displayNames = anggota.map((user) =>
+    user.replace("@s.whatsapp.net", "")
+  ); // Hapus @s.whatsapp.net dari tampilan
+
+  // **Format pesan utama**
+  let response = `📢 *Panggilan untuk Divisi ${divisi.toUpperCase()}*\n━━━━━━━━━━━━━━━━━━\n`;
+  response += `👥 *Anggota ${divisi.toUpperCase()}:*\n`;
+  response += displayNames.join("\n"); // **Tampilkan hanya nomor/username**
+  response += `\n━━━━━━━━━━━━━━━━━━`;
+
+  // **Kirim pesan ke WhatsApp dengan mentions**
+  sock
+    .sendMessage(remoteJid, {
+      text: response,
+      mentions: mentions, // Mention tetap pakai format WhatsApp
+    })
+    .catch((err) => {
+      sock.sendMessage(remoteJid, { text: `❌ Gagal Mengirim Pesan: ${err}` });
+    });
+};
+
+
+
+// Menampilkan anggota dalam semua divisi
+const listDivisi = (remoteJid, sock) => {
+  let divisiList = loadDivisiData();
+
+  console.log("📥 Perintah diterima: !listdivisi");
+  console.log("📂 Data divisi yang tersimpan:", divisiList);
+
+  if (Object.keys(divisiList).length === 0) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Tidak ada divisi yang tersedia. Tambahkan dengan *!adddivisi [nama_divisi]*",
+    });
+    return;
+  }
+
+  let response = "📋 *Daftar Divisi yang Tersedia:*\n━━━━━━━━━━━━━━━━━━";
+  for (let divisi in divisiList) {
+    const anggotaCount = divisiList[divisi].length;
+    response += `\n🔹 *${divisi.toUpperCase()}* (${anggotaCount} anggota)`;
+  }
+  response += "\n━━━━━━━━━━━━━━━━━━";
+
+  sock.sendMessage(remoteJid, { text: response });
+};
+
+// Menambahkan anggota ke dalam divisi
+const addToDivisi = (remoteJid, sock, user, divisi) => {
+  let divisiList = loadDivisiData();
+
+  if (!divisiList[divisi]) {
+    divisiList[divisi] = [];
+  }
+
+  if (!divisiList[divisi].includes(user)) {
+    divisiList[divisi].push(user);
+    sock.sendMessage(remoteJid, {
+      text: `✅ *${user}* telah ditambahkan ke divisi *${divisi}*.`,
+    });
+    saveDivisiData(divisiList); // Simpan data setelah perubahan
+  } else {
+    sock.sendMessage(remoteJid, {
+      text: `⚠️ *${user}* sudah ada dalam divisi *${divisi}*.`,
+    });
+  }
+};
+
+// Menghapus anggota dari divisi
+const removeFromDivisi = (remoteJid, sock, user, divisi) => {
+  let divisiList = loadDivisiData();
+
+  if (!divisiList[divisi]) {
+    sock.sendMessage(remoteJid, {
+      text: `⚠️ Divisi *${divisi}* tidak ditemukan.`,
+    });
+    return;
+  }
+
+  if (!divisiList[divisi].includes(user)) {
+    sock.sendMessage(remoteJid, {
+      text: `⚠️ *${user}* tidak terdaftar dalam divisi *${divisi}*.`,
+    });
+    return;
+  }
+
+  // Hapus user dari divisi
+  divisiList[divisi] = divisiList[divisi].filter((member) => member !== user);
+  saveDivisiData(divisiList);
+
+  sock.sendMessage(remoteJid, {
+    text: `✅ *${user}* telah dihapus dari divisi *${divisi}*.`,
+  });
+  console.log(`✅ ${user} dihapus dari divisi ${divisi}`);
+};
 
 
 startBot();

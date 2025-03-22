@@ -424,6 +424,14 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 🔹 *!shortlink [URL]* ➝ 🔗 Memperpendek link  
 🔹 *!qrcode [teks]* ➝ 📷 Membuat Barcode  
 
+👥 *MANAJEMEN DIVISI*  
+━━━━━━━━━━━━━━━━━━  
+📢 *Tag Divisi* ➝ *!tagdivisi [nama_divisi]*  
+📜 *Daftar Divisi* ➝ *!listdivisi*  
+➕ *Tambah User ke Divisi* ➝ *!setdivisi @user [nama_divisi]*  
+❌ *Hapus User dari Divisi* ➝ *!removedivisi @user [nama_divisi]*  
+🏢 *Tambah Divisi Baru* ➝ *!adddivisi [nama_divisi]*  
+
 🎮 *PERMAINAN & TEBAK-TEBAKAN*  
 ━━━━━━━━━━━━━━━━━━  
 🎲 *Tebak Angka* ➝ *!tebakangka* | *!jangka [angka]*  
@@ -472,7 +480,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 📖 *MANAJEMEN AUTO-RESPONSE*  
 🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
 📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
-🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*
+🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*  
 
 👥 *GRUP & ADMIN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -499,6 +507,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
   sock.sendMessage(from, { text: menuText });
 };
+
 
 /* 📌 *INFO & UTILITAS* 
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  

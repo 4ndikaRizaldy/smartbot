@@ -289,30 +289,106 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
 
     // Penanganan grup
     else if (textMessage === "!bukagrup") {
-      await setGroupRestriction(remoteJid, sock, false);
+      await setGroupRestriction(remoteJid, sock, false, sender);
     } else if (textMessage === "!tutupgrup") {
-      await setGroupRestriction(remoteJid, sock, true);
+      await setGroupRestriction(remoteJid, sock, true, sender);
     } else if (textMessage.startsWith("!jadwalbuka ")) {
-      const time = textMessage.replace("!jadwalbuka ", "").trim();
-      setGroupSchedule(remoteJid, time, "open", sock);
+      const args = textMessage.split(" ");
+      if (args.length < 3) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Format salah! Gunakan: *!jadwalbuka HH:MM WIB/WITA/WIT*",
+        });
+        return;
+      }
+
+      const time = args[1]; // HH:MM
+      const timeZone = args[2]; // WIB, WITA, WIT
+
+      setGroupSchedule(remoteJid, time, "open", timeZone, sender, sock);
     } else if (textMessage.startsWith("!jadwaltutup ")) {
-      const time = textMessage.replace("!jadwaltutup ", "").trim();
-      setGroupSchedule(remoteJid, time, "close", sock);
+      const args = textMessage.split(" ");
+      if (args.length < 3) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Format salah! Gunakan: *!jadwaltutup HH:MM WIB/WITA/WIT*",
+        });
+        return;
+      }
+
+      const time = args[1];
+      const timeZone = args[2];
+
+      setGroupSchedule(remoteJid, time, "close", timeZone, sender, sock);
     } else if (textMessage === "!cekjadwal") {
+      // Cek apakah pengirim adalah admin
+      const userIsAdmin = await isUserAdmin(remoteJid, sender, sock);
+
+      if (!userIsAdmin) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Hanya admin yang dapat mengecek jadwal grup ini!",
+        });
+        return;
+      }
+
       if (!groupSchedules[remoteJid]) {
         sock.sendMessage(remoteJid, {
           text: "⚠️ Tidak ada jadwal yang diset untuk grup ini!",
         });
       } else {
         const schedule = groupSchedules[remoteJid];
+
+        // Pastikan data tersimpan dengan benar
+        const openSchedule = schedule.open
+          ? `${schedule.open.time} ${schedule.open.timeZone}`
+          : "Belum diset";
+
+        const closeSchedule = schedule.close
+          ? `${schedule.close.time} ${schedule.close.timeZone}`
+          : "Belum diset";
+
         sock.sendMessage(remoteJid, {
-          text: `📅 Jadwal Grup:\n🔓 Buka: ${
-            schedule.open || "Belum diset"
-          }\n🔒 Tutup: ${schedule.close || "Belum diset"}`,
+          text: `📅 Jadwal Grup:\n🔓 Buka: ${openSchedule}\n🔒 Tutup: ${closeSchedule}`,
         });
       }
-    }
-    if (textMessage.startsWith("!add ")) {
+    } else if (textMessage.startsWith("!hapusjadwal")) {
+      const args = textMessage.split(" ");
+      const target = args[1]; // Ambil kata kedua (buka/tutup)
+
+      const userIsAdmin = await isUserAdmin(remoteJid, sender, sock);
+      if (!userIsAdmin) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Hanya admin yang dapat menghapus jadwal grup ini!",
+        });
+        return;
+      }
+
+      if (!groupSchedules[remoteJid]) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada jadwal yang tersimpan untuk grup ini!",
+        });
+        return;
+      }
+
+      if (!target) {
+        // Jika tidak ada kata kedua, hapus semua jadwal
+        delete groupSchedules[remoteJid];
+        sock.sendMessage(remoteJid, {
+          text: "✅ Semua jadwal grup telah dihapus!",
+        });
+      } else if (target === "buka" && groupSchedules[remoteJid].open) {
+        delete groupSchedules[remoteJid].open;
+        sock.sendMessage(remoteJid, { text: "✅ Jadwal buka telah dihapus!" });
+      } else if (target === "tutup" && groupSchedules[remoteJid].close) {
+        delete groupSchedules[remoteJid].close;
+        sock.sendMessage(remoteJid, { text: "✅ Jadwal tutup telah dihapus!" });
+      } else {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan perintah *!hapusjadwal buka* atau *!hapusjadwal tutup*!",
+        });
+        return;
+      }
+
+      saveScheduleToFile(); // Simpan perubahan ke file
+    } else if (textMessage.startsWith("!add ")) {
       const phoneNumbers = textMessage.replace("!add ", "").trim().split(" ");
       await addMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage.startsWith("!remove ")) {
@@ -507,7 +583,6 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
   sock.sendMessage(from, { text: menuText });
 };
-
 
 /* 📌 *INFO & UTILITAS* 
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
@@ -1737,81 +1812,206 @@ async function announceToAll(remoteJid, sender, sock, message) {
   }
 }
 
-// Buka tutup Grup
-async function setGroupRestriction(groupId, sock, isClosed) {
-  try {
-    await sock.groupSettingUpdate(
-      groupId,
-      isClosed ? "announcement" : "not_announcement"
+// Mapping zona waktu berdasarkan kode (WIB, WITA, WIT)
+const timeZones = {
+  WIB: "Asia/Jakarta",
+  WITA: "Asia/Makassar",
+  WIT: "Asia/Jayapura",
+};
+
+// File untuk menyimpan jadwal
+const SCHEDULE_FILE = "groupSchedules.json";
+
+// Objek untuk menyimpan jadwal grup
+let groupSchedules = {};
+
+// Fungsi untuk menyimpan jadwal ke file JSON
+function saveScheduleToFile() {
+  fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(groupSchedules, null, 2));
+}
+
+// Fungsi untuk membaca jadwal dari file JSON saat bot dimulai
+function loadScheduleFromFile() {
+  if (fs.existsSync(SCHEDULE_FILE)) {
+    const data = fs.readFileSync(SCHEDULE_FILE);
+    groupSchedules = JSON.parse(data);
+    console.log("✅ Jadwal grup berhasil dimuat dari file.");
+  } else {
+    console.log(
+      "⚠️ Tidak ditemukan file jadwal, memulai dengan jadwal kosong."
     );
-    console.log(`✅ Grup ${groupId} ${isClosed ? "ditutup" : "dibuka"}`);
-  } catch (error) {
-    console.error("❌ Gagal mengubah status grup:", error);
-    sock.sendMessage(groupId, {
-      text: "⚠️ Bot harus jadi admin untuk membuka/menutup grup!",
-    });
+    groupSchedules = {};
   }
 }
 
-let groupSchedules = {}; // Simpan jadwal per grup
+// Panggil fungsi untuk memuat jadwal saat bot pertama kali dijalankan
+loadScheduleFromFile();
 
-function setGroupSchedule(groupId, time, action, sock) {
-  if (!/^\d{2}:\d{2}$/.test(time)) {
-    sock.sendMessage(groupId, {
-      text: "⚠️ Format waktu salah! Gunakan HH:MM (contoh: 07:00)",
-    });
-    return;
-  }
-
-  if (!groupSchedules[groupId]) {
-    groupSchedules[groupId] = {};
-  }
-
-  groupSchedules[groupId][action] = time;
-  sock.sendMessage(groupId, {
-    text: `✅ Grup akan *${
-      action === "open" ? "dibuka" : "ditutup"
-    }* pada ${time}`,
-  });
-}
-
-async function checkGroupSchedule(sock) {
-  setInterval(async () => {
-    const now = moment().tz("Asia/Jakarta").format("HH:mm");
-    console.log(`⏰ Mengecek jadwal... Sekarang: ${now}`);
-
-    for (const group in groupSchedules) {
-      const schedule = groupSchedules[group];
-
-      if (schedule.open === now) {
-        console.log(`🔓 Membuka grup ${group} pada ${now}`);
-        await setGroupRestriction(group, sock, false);
-        sock.sendMessage(group, { text: "🔓 Grup telah dibuka otomatis!" });
-      }
-
-      if (schedule.close === now) {
-        console.log(`🔒 Menutup grup ${group} pada ${now}`);
-        await setGroupRestriction(group, sock, true);
-        sock.sendMessage(group, { text: "🔒 Grup telah ditutup otomatis!" });
-      }
-    }
-  }, 60000); // Cek tiap 1 menit
-}
-
-// Fungsi untuk mengecek apakah pengirim adalah admin
-async function isUserAdmin(remoteJid, sender, sock) {
+// Cek apakah bot adalah admin di grup
+async function isBotAdmin(groupId, sock) {
   try {
-    const groupMetadata = await sock.groupMetadata(remoteJid);
-    const isAdmin = groupMetadata.participants.some(
+    const groupMetadata = await sock.groupMetadata(groupId);
+    const botNumber = sock.user.id.split(":")[0] + "@s.whatsapp.net";
+
+    return groupMetadata.participants.some(
       (p) =>
-        p.id === sender && (p.admin === "admin" || p.admin === "superadmin")
+        p.id === botNumber && (p.admin === "admin" || p.admin === "superadmin")
     );
-    return isAdmin;
   } catch (error) {
     console.log("❌ Gagal mengambil metadata grup:", error);
     return false;
   }
 }
+
+// Cek apakah pengguna yang memberikan perintah adalah admin
+async function isUserAdmin(remoteJid, sender, sock) {
+  try {
+    const groupMetadata = await sock.groupMetadata(remoteJid);
+    return groupMetadata.participants.some(
+      (p) =>
+        p.id === sender && (p.admin === "admin" || p.admin === "superadmin")
+    );
+  } catch (error) {
+    console.log("❌ Gagal mengambil metadata grup:", error);
+    return false;
+  }
+}
+
+// Fungsi Buka/Tutup Grup dengan pengecekan admin
+async function setGroupRestriction(groupId, sock, isClosed, sender) {
+  try {
+    const botIsAdmin = await isBotAdmin(groupId, sock);
+    if (!botIsAdmin) {
+      sock.sendMessage(groupId, {
+        text: "⚠️ Bot harus menjadi admin untuk mengubah pengaturan grup!",
+      });
+      return;
+    }
+
+    const userIsAdmin = await isUserAdmin(groupId, sender, sock);
+    if (!userIsAdmin) {
+      sock.sendMessage(groupId, {
+        text: "⚠️ Kamu harus menjadi admin untuk menjalankan perintah ini!",
+      });
+      return;
+    }
+
+    await sock.groupSettingUpdate(
+      groupId,
+      isClosed ? "announcement" : "not_announcement"
+    );
+
+    console.log(`✅ Grup ${groupId} ${isClosed ? "ditutup" : "dibuka"}`);
+    sock.sendMessage(groupId, {
+      text: `✅ Grup telah *${isClosed ? "ditutup" : "dibuka"}*`,
+    });
+  } catch (error) {
+    console.error("❌ Gagal mengubah status grup:", error);
+    sock.sendMessage(groupId, {
+      text: "⚠️ Terjadi kesalahan saat mengubah status grup!",
+    });
+  }
+}
+
+// Fungsi untuk mengatur jadwal buka/tutup grup
+async function setGroupSchedule(groupId, time, action, timeZone, sender, sock) {
+  if (!sock) {
+    console.error("❌ Error: sock tidak terdefinisi!");
+    return;
+  }
+
+  if (!/^\d{2}:\d{2}$/.test(time)) {
+    sock.sendMessage(groupId, {
+      text: "⚠️ Format waktu salah! Gunakan HH:MM (contoh: 07:00 WIB)",
+    });
+    return;
+  }
+
+  const validTimeZones = ["WIB", "WITA", "WIT"];
+  if (!validTimeZones.includes(timeZone)) {
+    sock.sendMessage(groupId, {
+      text: "⚠️ Zona waktu tidak valid! Gunakan WIB, WITA, atau WIT.",
+    });
+    return;
+  }
+
+  // Cek apakah pengguna adalah admin
+  const userIsAdmin = await isUserAdmin(groupId, sender, sock);
+  if (!userIsAdmin) {
+    sock.sendMessage(groupId, {
+      text: "⚠️ Kamu harus menjadi admin untuk mengatur jadwal grup!",
+    });
+    return;
+  }
+
+  // Simpan jadwal terbaru
+  if (!groupSchedules[groupId]) {
+    groupSchedules[groupId] = {};
+  }
+
+  groupSchedules[groupId][action] = { time, timeZone, sender };
+
+  // Simpan ke file agar tetap ada setelah restart
+  saveScheduleToFile();
+
+  sock.sendMessage(groupId, {
+    text: `✅ Grup akan *${
+      action === "open" ? "dibuka" : "ditutup"
+    }* pada ${time} ${timeZone}`,
+  });
+}
+
+// Fungsi untuk mengecek dan menjalankan jadwal otomatis
+async function checkGroupSchedule(sock) {
+  setInterval(async () => {
+    const nowWIB = moment().tz("Asia/Jakarta").format("HH:mm");
+    const nowWITA = moment().tz("Asia/Makassar").format("HH:mm");
+    const nowWIT = moment().tz("Asia/Jayapura").format("HH:mm");
+
+    console.log(`⏰ Mengecek jadwal...`);
+    console.log(`🔹 WIB: ${nowWIB} | WITA: ${nowWITA} | WIT: ${nowWIT}`);
+
+    for (const group in groupSchedules) {
+      const schedule = groupSchedules[group];
+
+      // Pastikan `schedule.open` tidak undefined sebelum mengakses propertinya
+      if (
+        schedule.open &&
+        schedule.open.time &&
+        schedule.open.timeZone &&
+        ((schedule.open.timeZone === "WIB" && schedule.open.time === nowWIB) ||
+          (schedule.open.timeZone === "WITA" &&
+            schedule.open.time === nowWITA) ||
+          (schedule.open.timeZone === "WIT" && schedule.open.time === nowWIT))
+      ) {
+        console.log(
+          `🔓 Membuka grup ${group} pada ${schedule.open.time} ${schedule.open.timeZone}`
+        );
+        await setGroupRestriction(group, sock, false, schedule.open.sender);
+        sock.sendMessage(group, { text: "🔓 Grup telah dibuka otomatis!" });
+      }
+
+      // Pastikan `schedule.close` tidak undefined sebelum mengakses propertinya
+      if (
+        schedule.close &&
+        schedule.close.time &&
+        schedule.close.timeZone &&
+        ((schedule.close.timeZone === "WIB" &&
+          schedule.close.time === nowWIB) ||
+          (schedule.close.timeZone === "WITA" &&
+            schedule.close.time === nowWITA) ||
+          (schedule.close.timeZone === "WIT" && schedule.close.time === nowWIT))
+      ) {
+        console.log(
+          `🔒 Menutup grup ${group} pada ${schedule.close.time} ${schedule.close.timeZone}`
+        );
+        await setGroupRestriction(group, sock, true, schedule.close.sender);
+        sock.sendMessage(group, { text: "🔒 Grup telah ditutup otomatis!" });
+      }
+    }
+  }, 60000); // Cek setiap 1 menit
+}
+
 
 // Fungsi untuk menambahkan anggota ke grup
 async function addMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
@@ -2136,7 +2336,6 @@ const addDivisi = (remoteJid, sock, divisi) => {
   });
 };
 
-
 // Menandai semua anggota dalam divisi tertentu
 const tagDivisi = async (remoteJid, sock, textMessage) => {
   const args = textMessage.split(" ").slice(1);
@@ -2189,8 +2388,6 @@ const tagDivisi = async (remoteJid, sock, textMessage) => {
       sock.sendMessage(remoteJid, { text: `❌ Gagal Mengirim Pesan: ${err}` });
     });
 };
-
-
 
 // Menampilkan anggota dalam semua divisi
 const listDivisi = (remoteJid, sock) => {
@@ -2264,6 +2461,5 @@ const removeFromDivisi = (remoteJid, sock, user, divisi) => {
   });
   console.log(`✅ ${user} dihapus dari divisi ${divisi}`);
 };
-
 
 startBot();

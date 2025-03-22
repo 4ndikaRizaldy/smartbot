@@ -349,6 +349,21 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
       await submitFeedback(remoteJid, sender, sock, messageContent);
     } else if (textMessage === "!lihatkritik") {
       await viewFeedback(remoteJid, sender, sock);
+    }
+
+    // TEST
+    else if (textMessage.startsWith("!roll")) {
+      rollDice(remoteJid, sock);
+    } else if (textMessage.startsWith("!fact")) {
+      getFact(remoteJid, sock);
+    } else if (textMessage.startsWith("!joke")) {
+      getJoke(remoteJid, sock);
+    } else if (textMessage.startsWith("!countdown")) {
+      const eventDate = textMessage.replace("!countdown", "").trim(); // Ambil tanggal acara dari input pengguna
+      console.log("Event Date Diterima: ", eventDate); // Log tanggal yang diterima dari input pengguna
+
+      // Panggil fungsi countdown
+      countdown(remoteJid, sock, eventDate);
     } else "Pilihan yang anda inginkan belum tersedia";
   });
 
@@ -499,7 +514,6 @@ async function generateQRCode(text, remoteJid, sock) {
 }
 
 /* AKHIR KODE INFO & UTILITAS*/
-
 
 /* 🎮 *PERMAINAN & TEBAK-TEBAKAN* 
 🎲 *Tebak Angka* ➝ *!tebakangka* | *!jangka [angka]*  
@@ -1071,13 +1085,10 @@ async function sendMotivation(remoteJid, sock) {
 
 /* AKHIR */
 
-
 /* AWAL */
 /* 🔢 *MATEMATIKA*  
 ━━━━━━━━━━━━━━━━━━  
 🧮 *Kalkulator* ➝ *!hitung [ekspresi]* (contoh: !hitung 5+3*2)   */
-
-
 
 /* 🌍 *BAHASA & TERJEMAHAN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -1144,7 +1155,7 @@ async function translateText(textMessage, remoteJid, sock) {
 📜 *Lihat Pengingat* ➝ *!listremind*  
 ❌ *Hapus Pengingat* ➝ *!cancelremind [ID]*  
 ❌ *Stop Reminder Berulang* ➝ *!stopremind*
-🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat* */  
+🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat* */
 
 // REMINDER
 const fs = require("fs");
@@ -1400,7 +1411,6 @@ const stopRepeatReminder = (remoteJid, sender, textMessage, sock) => {
   }
 };
 
-
 /* 📚 *MANAJEMEN GURU & AUTO-RESPONSE*  
 ━━━━━━━━━━━━━━━━━━  
 👨‍🏫 *MANAJEMEN GURU*  
@@ -1622,7 +1632,7 @@ async function deleteLearnedResponse(textMessage, remoteJid, sock) {
 ⏰ *Jadwal Grup* ➝ *!jadwalbuka [jam]* | *!jadwaltutup [jam]* | *!cekjadwal*  
 ➕ *Tambah Anggota* ➝ *!add [nomor]* | 🚪 *Keluarkan* ➝ *!remove [nomor]*  
 👤 *Promote/Demote Admin* ➝ *!promote [@user]* | *!demote [@user]*
-*/ 
+*/
 // Tag Semua Orang
 const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
   try {
@@ -1847,7 +1857,6 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
   }
 }
 
-
 /* 📩 *SARAN & MASUKAN*  
 ━━━━━━━━━━━━━━━━━━  
 ✍️ *Kirim Kritik* ➝ *!kritik*  
@@ -1920,6 +1929,127 @@ async function viewFeedback(remoteJid, sender, sock) {
     });
   }
 }
+
+async function rollDice(remoteJid, sock) {
+  // Hasil roll dadu (1 sampai 6)
+  const result = Math.floor(Math.random() * 6) + 1;
+
+  // Cek apakah sock adalah instance dari WhatsApp client
+  if (sock && sock.sendMessage) {
+    await sock.sendMessage(remoteJid, {
+      text: `🎲 *Hasil Roll Dadu*: ${result}`,
+    });
+  } else {
+    console.log("Error: sock.sendMessage tidak ditemukan");
+  }
+}
+
+async function getFact(remoteJid, sock) {
+  try {
+    const response = await fetch(
+      "https://uselessfacts.jsph.pl/random.json?language=id"
+    );
+    const data = await response.json();
+
+    // Kirimkan fakta menarik ke pengguna
+    sock.sendMessage(remoteJid, {
+      text: `🧠 *Fakta Menarik*:\n\n${data.text}`,
+    });
+  } catch (error) {
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengambil fakta menarik." });
+  }
+}
+
+async function getJoke(remoteJid, sock) {
+  try {
+    // Request ke API Dad Jokes
+    const response = await fetch("https://icanhazdadjoke.com/", {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    // Mengirimkan lelucon ke pengguna
+    sock.sendMessage(remoteJid, {
+      text: `😂 *Lelucon Ayah Hari Ini*:\n\n${data.joke}`,
+    });
+  } catch (error) {
+    sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengambil lelucon ayah." });
+  }
+}
+
+// COUNTDOWN
+const countdown = (remoteJid, sock, eventDate) => {
+  const now = new Date(); // Mendapatkan waktu sekarang
+  const event = new Date(eventDate); // Mengubah tanggal event yang diterima ke dalam bentuk Date object
+
+  console.log("Waktu Sekarang: ", now); // Log waktu saat ini
+  console.log("Waktu Acara: ", event); // Log waktu acara yang dimasukkan
+
+  // Cek apakah eventDate valid
+  if (isNaN(event)) {
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Format tanggal salah! Pastikan formatnya adalah YYYY-MM-DDTHH:MM:SS.",
+    });
+    return;
+  }
+
+  const timeDiff = event - now; // Selisih waktu dalam milidetik
+  console.log("Selisih Waktu: ", timeDiff); // Log selisih waktu
+
+  if (timeDiff <= 0) {
+    // Jika acara sudah dimulai atau lewat (selisih waktu <= 0)
+    sock.sendMessage(remoteJid, { text: "🎉 Acara sudah dimulai!" });
+    return;
+  }
+
+  // Mengatur interval untuk countdown tiap detik
+  let countdownInterval = setInterval(() => {
+    const now = new Date(); // Waktu saat ini
+    const timeDiff = event - now; // Selisih waktu dalam milidetik
+
+    // Jika acara sudah dimulai, hentikan interval dan kirim pesan
+    if (timeDiff <= 0) {
+      clearInterval(countdownInterval); // Hentikan interval
+      sock.sendMessage(remoteJid, { text: "🎉 Acara sudah dimulai!" });
+      return;
+    }
+
+    // Hitung waktu sisa (hari, jam, menit, detik)
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000); // Ambil detik sisa waktu
+    const minutes = Math.floor(seconds / 60); // Mengambil menit dari sisa detik
+    const remainingSeconds = seconds % 60; // Sisa detik setelah dihitung menit
+
+    // Menampilkan countdown setiap interval 30 detik
+    if (minutes > 0 && remainingSeconds === 0) {
+      sock.sendMessage(remoteJid, {
+        text: `⏳ *Acara akan dimulai:* \n${minutes} menit lagi`,
+      });
+    } else if (remainingSeconds % 30 === 0 && remainingSeconds !== 0) {
+      sock.sendMessage(remoteJid, {
+        text: `⏳ *Acara akan dimulai:* \n${remainingSeconds} detik lagi`,
+      });
+    }
+
+    // Tampilkan countdown untuk detik 3, 2, 1
+    if (remainingSeconds <= 3 && remainingSeconds > 0) {
+      sock.sendMessage(remoteJid, {
+        text: `⏳ *Hitung Mundur:* \n${remainingSeconds}...`,
+      });
+    }
+
+    // Jika countdown sudah mencapai 0 detik, kirim pesan "Acara Dimulai"
+    if (remainingSeconds <= 0) {
+      clearInterval(countdownInterval); // Hentikan interval
+      sock.sendMessage(remoteJid, { text: "🎉 Acara sudah dimulai!" });
+    }
+  }, 1000); // Setiap detik (1000 ms)
+};
+
+
+
 
 
 startBot();

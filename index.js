@@ -153,8 +153,11 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
 
     // Penanganan perintah umum dan utilitas
     if (textMessage === "!fitur") {
-      showMenu(remoteJid, sock);
-    } else if (textMessage === "!ping") {
+    const isAdmin = false; // Atur isAdmin (bisa cek dari grup)
+    showMenu(remoteJid, isAdmin, sock);
+}
+
+     else if (textMessage === "!ping") {
       sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
     } else if (textMessage.startsWith("!tagall")) {
       const customMessage =
@@ -487,94 +490,116 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
 }
 
 // TAMPILAN MENU
-const showMenu = (from, sock) => {
+const showMenu = (from, isAdmin, sock) => {
   const menuText = `
 ✨ *SMARTBOT MENU* ✨
 Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perintah yang bisa kamu gunakan:
 
-📌 *INFO & UTILITAS*  
+📌 *INFO & UTILITAS* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
+  *Contoh:* \`!menu\`  
 🔹 *!ping* ➝ 🏓 Mengecek apakah bot aktif  
+  *Contoh:* \`!ping\` → *Bot menjawab: "Pong! Bot aktif!"*  
 🔹 *!jumlahanggota* ➝ 👥 Menampilkan jumlah anggota grup  
+  *Contoh:* \`!jumlahanggota\`  
 🔹 *!shortlink [URL]* ➝ 🔗 Memperpendek link  
+  *Contoh:* \`!shortlink https://www.example.com\`  
 🔹 *!qrcode [teks]* ➝ 📷 Membuat Barcode  
+  *Contoh:* \`!qrcode SmartBot\`  
 
-👥 *MANAJEMEN DIVISI*  
+👥 *MANAJEMEN DIVISI* (Admin)  
 ━━━━━━━━━━━━━━━━━━  
 📢 *Tag Divisi* ➝ *!tagdivisi [nama_divisi]*  
+  *Contoh:* \`!tagdivisi IT\`  
 📜 *Daftar Divisi* ➝ *!listdivisi*  
+  *Contoh:* \`!listdivisi\`  
 ➕ *Tambah User ke Divisi* ➝ *!setdivisi @user [nama_divisi]*  
+  *Contoh:* \`!setdivisi @johndoe IT\`  
 ❌ *Hapus User dari Divisi* ➝ *!removedivisi @user [nama_divisi]*  
+  *Contoh:* \`!removedivisi @johndoe IT\`  
 🏢 *Tambah Divisi Baru* ➝ *!adddivisi [nama_divisi]*  
+  *Contoh:* \`!adddivisi Keuangan\`  
 
-🎮 *PERMAINAN & TEBAK-TEBAKAN*  
+🎮 *PERMAINAN & TEBAK-TEBAKAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-🎲 *Tebak Angka* ➝ *!tebakangka* | *!jangka [angka]*  
-🧠 *Tebak Logika* ➝ *!tebaklogika* | *!jlogika [jawaban]* | *!kluelogika*  
-🔠 *Acak Huruf* ➝ *!acakhuruf* | *!jhuruf [kata]*  
+🎲 *Tebak Angka* ➝ *!tebakangka*  
+  *Contoh:* \`!tebakangka\` → *Bot akan memilih angka acak untuk ditebak*  
+🧠 *Tebak Logika* ➝ *!tebaklogika*  
+  *Contoh:* \`!tebaklogika\` → *Bot akan memberikan teka-teki logika*  
+🔠 *Acak Huruf* ➝ *!acakhuruf*  
+  *Contoh:* \`!acakhuruf\` → *Bot mengacak huruf dari sebuah kata*  
 ⚔️ *1vs1 Acak Huruf* ➝ *!tantang @username*  
+  *Contoh:* \`!tantang @johndoe\`  
 🔥 *Survival Mode* ➝ *!survival*  
 🏆 *Leaderboard* ➝ *!leaderboard*  
 🎖 *Rank & Hadiah Virtual* ➝ *!rank*  
 
-📚 *INFO & PENGETAHUAN*  
+📚 *INFO & PENGETAHUAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-📅 *Tanggal* ➝ *!tanggal* (Masehi & Hijriah)  
+📅 *Tanggal* ➝ *!tanggal*  
+  *Contoh:* \`!tanggal\` → *Menampilkan tanggal Masehi & Hijriah*  
 💡 *Fakta Unik* ➝ *!faktaunik*  
+  *Contoh:* \`!faktaunik\` → *Bot memberikan fakta menarik*  
 📖 *Quran* ➝ *!quran [surat:ayat]*  
+  *Contoh:* \`!quran 2:255\`  
 🌍 *Wikipedia* ➝ *!wiki [pertanyaan]*  
+  *Contoh:* \`!wiki Albert Einstein\`  
 🔍 *Pencarian Bing* ➝ *!bing [pertanyaan]*  
+  *Contoh:* \`!bing cuaca hari ini\`  
 📜 *Pantun* ➝ *!pantun*  
 🌟 *Motivasi* ➝ *!motivasi*  
 
-🔢 *MATEMATIKA*  
+🔢 *MATEMATIKA* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-🧮 *Kalkulator* ➝ *!hitung [ekspresi]* (contoh: !hitung 5+3*2)  
+🧮 *Kalkulator* ➝ *!hitung [ekspresi]*  
+  *Contoh:* \`!hitung 5+3*2\` → *Hasil: 11*  
 
-🌍 *BAHASA & TERJEMAHAN*  
+🌍 *BAHASA & TERJEMAHAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-🔄 *Terjemahan* ➝ *!translate [kode bahasa] [teks]* (contoh: !translate en Pantai)  
+🔄 *Terjemahan* ➝ *!translate [kode bahasa] [teks]*  
+  *Contoh:* \`!translate en Saya suka kopi\`  
 🌏 *Kode Bahasa* ➝ *!kodenegara*  
 
-⏰ *PENGINGAT (REMINDER)*  
+⏰ *PENGINGAT (REMINDER)* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-📅 *Setel Pengingat* ➝ *!setremind [tanggal] [jam] [pesan]*  
-🏷️ *Setel Pengingat Grup* ➝ *!setgremind [tanggal] [jam] [pesan]*  
+📅 *Setel Pengingat* ➝ *!setremind [waktu] [pesan]*  
+  *Contoh:* \`!setremind 2025-04-01 08:00 Rapat pagi\`  
 📜 *Lihat Pengingat* ➝ *!listremind*  
-❌ *Hapus Pengingat* ➝ *!cancelremind [ID]*  
-❌ *Stop Reminder Berulang* ➝ *!stopremind*  
-🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat*  
+🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]*  
 
-📚 *MANAJEMEN GURU & AUTO-RESPONSE*  
+📚 *MANAJEMEN GURU & AUTO-RESPONSE* (Admin)  
 ━━━━━━━━━━━━━━━━━━  
-👨‍🏫 *MANAJEMEN GURU*  
-✍️ *Tambah Guru* ➝ *!tambahguru [nomor]*  
+👨‍🏫 *Tambah Guru* ➝ *!tambahguru [nomor]*  
+  *Contoh:* \`!tambahguru 62812345678\`  
 📜 *Daftar Guru* ➝ *!listguru*  
+  *Contoh:* \`!listguru\`  
 ❌ *Hapus Guru* ➝ *!hapusguru [nomor]*  
-
-📖 *MANAJEMEN AUTO-RESPONSE*  
+  *Contoh:* \`!hapusguru 62812345678\`  
 🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
+  *Contoh:* \`!ajarin Apa itu AI? = AI adalah kecerdasan buatan.\`  
 📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
 🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*  
 
-👥 *GRUP & ADMIN*  
+👥 *GRUP & ADMIN* (Admin)  
 ━━━━━━━━━━━━━━━━━━  
 📢 *Tag Semua* ➝ *!tagall [pesan opsional]*  
+  *Contoh:* \`!tagall Halo semua!\`  
 🔓 *Buka/Tutup Grup* ➝ *!bukagrup* | *!tutupgrup*  
-⏰ *Jadwal Grup* ➝ *!jadwalbuka [jam]* | *!jadwaltutup [jam]* | *!cekjadwal*  
-➕ *Tambah Anggota* ➝ *!add [nomor]* | 🚪 *Keluarkan* ➝ *!remove [nomor]*  
-👤 *Promote/Demote Admin* ➝ *!promote [@user]* | *!demote [@user]*  
+  *Contoh:* \`!tutupgrup\`  
+➕ *Tambah Anggota* ➝ *!add [nomor]*  
+  *Contoh:* \`!add 62812345678\`  
+🚪 *Keluarkan Anggota* ➝ *!remove [nomor]*  
+  *Contoh:* \`!remove 62812345678\`  
 
-📩 *SARAN & MASUKAN*  
+📩 *SARAN & MASUKAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-✍️ *Kirim Kritik* ➝ *!kritik*  
-📜 *Lihat Kritik* ➝ *!lihatkritik*  
+✍️ *Kirim Kritik* ➝ *!kritik [pesan]*  
+  *Contoh:* \`!kritik Botnya keren!\`  
 
-🎲 *FITUR SERU*  
+🎲 *FITUR SERU* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 🎲 *Roll Dadu* ➝ *!roll*  
-💡 *Fakta Unik* ➝ *!fact*  
 😂 *Lelucon* ➝ *!joke*  
 ⏳ *Countdown Event* ➝ *!countdown [tanggal] [jam]*  
 
@@ -583,6 +608,8 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
   sock.sendMessage(from, { text: menuText });
 };
+
+
 
 /* 📌 *INFO & UTILITAS* 
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
@@ -2012,12 +2039,20 @@ async function checkGroupSchedule(sock) {
   }, 60000); // Cek setiap 1 menit
 }
 
-
 // Fungsi untuk menambahkan anggota ke grup
 async function addMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
+  // Cek apakah pengirim adalah admin
   if (!(await isUserAdmin(remoteJid, sender, sock))) {
     await sock.sendMessage(remoteJid, {
       text: "⚠️ Hanya admin yang bisa menambahkan anggota!",
+    });
+    return;
+  }
+
+  // Cek apakah bot adalah admin
+  if (!(await isBotAdmin(remoteJid, sock))) {
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Bot harus menjadi admin untuk menambahkan anggota!",
     });
     return;
   }
@@ -2040,9 +2075,18 @@ async function addMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
 
 // Fungsi untuk menghapus anggota dari grup
 async function removeMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
+  // Cek apakah pengirim adalah admin
   if (!(await isUserAdmin(remoteJid, sender, sock))) {
     await sock.sendMessage(remoteJid, {
       text: "⚠️ Hanya admin yang bisa mengeluarkan anggota!",
+    });
+    return;
+  }
+
+  // Cek apakah bot adalah admin
+  if (!(await isBotAdmin(remoteJid, sock))) {
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Bot harus menjadi admin untuk mengeluarkan anggota!",
     });
     return;
   }
@@ -2064,6 +2108,7 @@ async function removeMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
 }
 
 // Promote dan Demote
+// Fungsi promote member
 async function promoteMember(remoteJid, sender, sock, mentionedJid) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);
@@ -2077,16 +2122,25 @@ async function promoteMember(remoteJid, sender, sock, mentionedJid) {
       });
     }
 
+    // Cek apakah bot adalah admin
+    const botIsAdmin = await isBotAdmin(remoteJid, sock);
+    if (!botIsAdmin) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Bot harus menjadi admin untuk mempromosikan anggota!",
+      });
+    }
+
     await sock.groupParticipantsUpdate(remoteJid, mentionedJid, "promote");
     sock.sendMessage(remoteJid, {
       text: `✅ Berhasil promote ${mentionedJid.join(", ")} menjadi admin.`,
     });
   } catch (error) {
-    console.error("Error promoting member:", error);
+    console.error("❌ Error promoting member:", error);
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal promote member." });
   }
 }
 
+// Fungsi demote member
 async function demoteMember(remoteJid, sender, sock, mentionedJid) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);
@@ -2100,17 +2154,24 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
       });
     }
 
+    // Cek apakah bot adalah admin
+    const botIsAdmin = await isBotAdmin(remoteJid, sock);
+    if (!botIsAdmin) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Bot harus menjadi admin untuk mendemote anggota!",
+      });
+    }
+
     await sock.groupParticipantsUpdate(remoteJid, mentionedJid, "demote");
     sock.sendMessage(remoteJid, {
-      text: `✅ Berhasil demote ${mentionedJid.join(
-        ", "
-      )} menjadi anggota biasa.`,
+      text: `✅ Berhasil demote ${mentionedJid.join(", ")} menjadi anggota biasa.`,
     });
   } catch (error) {
-    console.error("Error demoting member:", error);
+    console.error("❌ Error demoting member:", error);
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal demote member." });
   }
 }
+
 
 /* 📩 *SARAN & MASUKAN*  
 ━━━━━━━━━━━━━━━━━━  

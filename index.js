@@ -63,45 +63,6 @@ async function startBot() {
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  sock.ev.on("group-participants.update", async (update) => {
-    console.log("🔄 Update diterima:", update); // Debugging log
-
-    const { id, participants, action } = update;
-
-    for (let participant of participants) {
-      let userNumber = participant.replace("@s.whatsapp.net", "");
-
-      if (action === "add") {
-        console.log(`✅ Deteksi anggota baru: @${userNumber}`);
-
-        await delay(2000); // Delay untuk memastikan update sudah stabil
-
-        let welcomeMessage = `👋 *Selamat datang @${userNumber}!*  
-Semoga betah di grup ini. Jangan lupa baca aturan ya! 😊`;
-
-        await sock.sendMessage(id, {
-          text: welcomeMessage,
-          mentions: [participant],
-        });
-
-        console.log("📩 Pesan selamat datang dikirim ke:", userNumber);
-      } else if (action === "remove") {
-        console.log(`❌ Deteksi anggota keluar: @${userNumber}`);
-
-        await delay(2000); // Delay untuk menghindari bug
-        let goodbyeMessage = `😢 *Selamat tinggal @${userNumber}!*  
-Semoga sukses dan sampai jumpa di lain waktu!`;
-
-        await sock.sendMessage(id, {
-          text: goodbyeMessage,
-          mentions: [participant],
-        });
-
-        console.log("📩 Pesan selamat tinggal dikirim ke:", userNumber);
-      }
-    }
-  });
-
   // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
@@ -121,10 +82,17 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
 
     // **Dapatkan timestamp pesan**
     const messageTimestamp = msg.messageTimestamp * 1000; // Ubah ke milidetik
+    const now = Date.now(); // Waktu sekarang dalam milidetik
 
-    // **Cek apakah pesan dikirim setelah bot dihidupkan**
+    // **Cek apakah pesan dikirim sebelum bot dihidupkan**
     if (messageTimestamp < startTime) {
       console.log("⏳ Mengabaikan pesan lama sebelum bot aktif.");
+      return;
+    }
+
+    // **Cek apakah pesan lebih lama dari 30 detik**
+    if (now - messageTimestamp > 30000) {
+      console.log("⏳ Mengabaikan pesan lama (> 30 detik).");
       return;
     }
     // Perintah untuk menyalakan/mematikan bot
@@ -153,11 +121,9 @@ Semoga sukses dan sampai jumpa di lain waktu!`;
 
     // Penanganan perintah umum dan utilitas
     if (textMessage === "!fitur") {
-    const isAdmin = false; // Atur isAdmin (bisa cek dari grup)
-    showMenu(remoteJid, isAdmin, sock);
-}
-
-     else if (textMessage === "!ping") {
+      const isAdmin = false; // Atur isAdmin (bisa cek dari grup)
+      showMenu(remoteJid, isAdmin, sock);
+    } else if (textMessage === "!ping") {
       sock.sendMessage(remoteJid, { text: "Pong! 🏓" });
     } else if (textMessage.startsWith("!tagall")) {
       const customMessage =

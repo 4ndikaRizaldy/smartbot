@@ -436,6 +436,84 @@ async function startBot() {
       removeFromDivisi(remoteJid, sock, user, divisi);
     }
 
+    // ABSENSI
+    else if (textMessage.startsWith("!tambahnama ")) {
+      let args = textMessage.replace("!tambahnama ", "").split(" | ");
+      if (args.length < 2) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan format: *!tambahnama [divisi] | [nama]*",
+        });
+      } else {
+        let response = tambahNama(args[0], args[1]);
+        sock.sendMessage(remoteJid, { text: response });
+      }
+    } else if (textMessage.startsWith("!editnama ")) {
+      let args = textMessage.replace("!editnama ", "").split(" | ");
+      if (args.length < 3) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan format: *!editnama [divisi] | [nama lama] | [nama baru]*",
+        });
+      } else {
+        let response = editNama(args[0], args[1], args[2]);
+        sock.sendMessage(remoteJid, { text: response });
+      }
+    } else if (textMessage.startsWith("!hapusnama ")) {
+      let args = textMessage.replace("!hapusnama ", "").split(" | ");
+      if (args.length < 2) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan format: *!hapusnama [divisi] | [nama]*",
+        });
+      } else {
+        let response = hapusNama(args[0], args[1]);
+        sock.sendMessage(remoteJid, { text: response });
+      }
+    } else if (textMessage.startsWith("!daftarhadir")) {
+      let args = textMessage.replace("!daftarhadir", "").trim();
+      let response = args ? tampilkanDaftarRapat(args) : tampilkanDaftarRapat();
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage.startsWith("!tambahrapat")) {
+      let args = textMessage.split("|").map((a) => a.trim()); // Pisahkan dengan "|" dan hapus spasi ekstra
+
+      if (args.length < 2) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Format salah! Gunakan: `!tambahrapat Nama Rapat | YYYY-MM-DD`",
+        });
+        return;
+      }
+
+      let judul = args[0].replace("!tambahrapat", "").trim(); // Ambil judul
+      let tanggal = args[1].trim(); // Ambil tanggal
+      let jabatan = args[2] ? args[2].trim() : null; // Jika ada jabatan
+      let nama = args[3] ? args[3].trim() : null; // Jika ada nama
+
+      let response = tambahRapat(judul, tanggal, jabatan, nama);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage.startsWith("!salinrapat ")) {
+      let args = textMessage.replace("!salinrapat ", "").split(" | ");
+      if (args.length < 2) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan format: *!salinrapat [rapat sumber] | [rapat tujuan]*",
+        });
+      } else {
+        let response = salinRapat(args[0], args[1]);
+        sock.sendMessage(remoteJid, { text: response });
+      }
+    } else if (textMessage.startsWith("!absen ")) {
+      let args = textMessage.replace("!absen ", "").split(" | ");
+      if (args.length < 2) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan format: *!absen [rapat] | [nama] | (izin/sakit opsional)*",
+        });
+      } else {
+        let status = "✅"; // Default hadir
+        if (args.length === 3) {
+          status = `❌ (${args[2]})`; // Jika ada izin/sakit
+        }
+        let response = absen(args[0], args[1], status);
+        sock.sendMessage(remoteJid, { text: response });
+      }
+    }
+
     // TEST
     else if (textMessage.startsWith("!roll")) {
       rollDice(remoteJid, sock);
@@ -574,8 +652,6 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
   sock.sendMessage(from, { text: menuText });
 };
-
-
 
 /* 📌 *INFO & UTILITAS* 
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
@@ -2130,14 +2206,15 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
 
     await sock.groupParticipantsUpdate(remoteJid, mentionedJid, "demote");
     sock.sendMessage(remoteJid, {
-      text: `✅ Berhasil demote ${mentionedJid.join(", ")} menjadi anggota biasa.`,
+      text: `✅ Berhasil demote ${mentionedJid.join(
+        ", "
+      )} menjadi anggota biasa.`,
     });
   } catch (error) {
     console.error("❌ Error demoting member:", error);
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal demote member." });
   }
 }
-
 
 /* 📩 *SARAN & MASUKAN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -2488,5 +2565,194 @@ const removeFromDivisi = (remoteJid, sock, user, divisi) => {
   });
   console.log(`✅ ${user} dihapus dari divisi ${divisi}`);
 };
+
+//ABSENSI
+const FILE_PATH = "./daftar_hadir.json"; // Lokasi penyimpanan
+
+// 🔹 Load data dari file JSON
+function loadData() {
+  if (!fs.existsSync(FILE_PATH)) return {}; // Jika file belum ada, return objek kosong
+  let rawData = fs.readFileSync(FILE_PATH);
+  return JSON.parse(rawData);
+}
+
+// 🔹 Simpan data ke file JSON
+function saveData(data) {
+  fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
+}
+
+function tambahNama(divisi, nama) {
+  let data = loadData(); // Load daftar hadir
+
+  if (!data[divisi]) {
+    data[divisi] = []; // Buat divisi jika belum ada
+  }
+
+  if (!data[divisi].includes(nama)) {
+    data[divisi].push(nama); // Tambah nama ke divisi
+    saveData(data);
+    return `✅ ${nama} berhasil ditambahkan ke divisi *${divisi}*!`;
+  } else {
+    return `⚠️ ${nama} sudah ada dalam daftar divisi *${divisi}*!`;
+  }
+}
+
+function editNama(divisi, namaLama, namaBaru) {
+  let data = loadData();
+
+  if (!data[divisi] || !data[divisi].includes(namaLama)) {
+    return `⚠️ Nama *${namaLama}* tidak ditemukan di divisi *${divisi}*!`;
+  }
+
+  let index = data[divisi].indexOf(namaLama);
+  data[divisi][index] = namaBaru; // Ganti nama
+  saveData(data);
+
+  return `✅ Nama *${namaLama}* telah diganti menjadi *${namaBaru}* dalam divisi *${divisi}*!`;
+}
+
+function hapusNama(divisi, nama) {
+  let data = loadData();
+
+  if (!data[divisi] || !data[divisi].includes(nama)) {
+    return `⚠️ Nama *${nama}* tidak ditemukan di divisi *${divisi}*!`;
+  }
+
+  data[divisi] = data[divisi].filter((n) => n !== nama); // Hapus nama
+  saveData(data);
+
+  return `🗑️ Nama *${nama}* telah dihapus dari divisi *${divisi}*!`;
+}
+
+function tambahRapat(judul, tanggal, jabatan = null, nama = null) {
+  let data = loadData();
+
+  if (!data[judul]) {
+    data[judul] = {}; // Buat rapat jika belum ada
+  }
+
+  if (!tanggal) {
+    return "⚠️ Harap sertakan tanggal dalam format YYYY-MM-DD.";
+  }
+
+  if (!data[judul][tanggal]) {
+    data[judul][tanggal] = {}; // Pastikan ada tempat untuk tanggal
+  }
+
+  if (jabatan && nama) {
+    if (!data[judul][tanggal][jabatan]) {
+      data[judul][tanggal][jabatan] = [];
+    }
+
+    if (!data[judul][tanggal][jabatan].includes(nama)) {
+      data[judul][tanggal][jabatan].push(nama);
+    }
+  }
+
+  saveData(data);
+  return `✅ Rapat *${judul}* pada *${tanggal}* berhasil ditambahkan!`;
+}
+
+
+
+function tampilkanDaftarRapat(judul, tanggal = null) {
+  let data = loadData();
+  if (!data[judul]) {
+    return `⚠️ Rapat *${judul}* tidak ditemukan.`;
+  }
+
+  let pesan = `📋 *Daftar Hadir Rapat: ${judul}*\n\n`;
+
+  if (tanggal) {
+    if (!data[judul][tanggal]) {
+      return `⚠️ Tidak ada data untuk *${judul}* pada *${tanggal}*.`;
+    }
+
+    pesan += `📆 *Tanggal: ${tanggal}*\n`;
+
+    for (let jabatan in data[judul][tanggal]) {
+      pesan += `\n🛑 *${jabatan}*\n`;
+      data[judul][tanggal][jabatan].forEach((nama) => {
+        pesan += `🪄 ${nama}\n`;
+      });
+    }
+    return pesan;
+  }
+
+  for (let tanggalRapat in data[judul]) {
+    pesan += `📆 *${tanggalRapat}*\n`;
+    for (let jabatan in data[judul][tanggalRapat]) {
+      pesan += `\n🛑 *${jabatan}*\n`;
+      data[judul][tanggalRapat][jabatan].forEach((nama) => {
+        pesan += `🪄 ${nama}\n`;
+      });
+    }
+    pesan += "\n";
+  }
+
+  return pesan;
+}
+
+
+function salinRapat(sumber, tujuan) {
+  let data = loadData();
+
+  // Pastikan rapat sumber ada
+  if (!data[sumber]) {
+    return `⚠️ Rapat *${sumber}* tidak ditemukan.`;
+  }
+
+  // Jika rapat tujuan belum ada, buat baru
+  if (!data[tujuan]) {
+    data[tujuan] = {};
+  }
+
+  // Salin data dari sumber ke tujuan
+  for (let jabatan in data[sumber]) {
+    if (!data[tujuan][jabatan]) {
+      data[tujuan][jabatan] = [];
+    }
+
+    // Gabungkan daftar nama tanpa duplikasi
+    data[sumber][jabatan].forEach((nama) => {
+      if (!data[tujuan][jabatan].includes(nama)) {
+        data[tujuan][jabatan].push(nama);
+      }
+    });
+  }
+
+  saveData(data);
+  return `✅ Daftar hadir dari *${sumber}* berhasil disalin ke *${tujuan}*!`;
+}
+
+function absen(judul, tanggal, nama, status = "✅") {
+  let data = loadData();
+
+  if (!data[judul] || !data[judul][tanggal]) {
+    return `⚠️ Rapat *${judul}* pada *${tanggal}* tidak ditemukan.`;
+  }
+
+  let ditemukan = false;
+
+  for (let jabatan in data[judul][tanggal]) {
+    let daftarNama = data[judul][tanggal][jabatan];
+
+    for (let i = 0; i < daftarNama.length; i++) {
+      if (typeof daftarNama[i] === "string" && daftarNama[i].startsWith(nama)) {
+        daftarNama[i] = `${nama} ${status}`;
+        ditemukan = true;
+      }
+    }
+  }
+
+  if (!ditemukan) {
+    return `⚠️ ${nama} tidak ditemukan dalam daftar hadir *${judul}* pada *${tanggal}*.`;
+  }
+
+  saveData(data);
+  return `✅ ${nama} telah absen di *${judul}* pada *${tanggal}* dengan status: *${status}*`;
+}
+
+
 
 startBot();

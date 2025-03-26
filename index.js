@@ -561,6 +561,90 @@ async function startBot() {
           text: "❌ Gagal mengubah nama grup. Pastikan bot adalah admin grup!",
         });
       }
+    } else if (textMessage.startsWith("!setdescgc ")) {
+      // Cek apakah pesan dikirim dari grup
+      const isGroup = remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan dalam grup.",
+        });
+      }
+
+      // Ambil metadata grup untuk cek admin
+      const groupMetadata = await sock.groupMetadata(remoteJid);
+      const participant = groupMetadata.participants.find(
+        (p) => p.id === sender
+      );
+      const isAdmin =
+        participant?.admin === "admin" || participant?.admin === "superadmin";
+
+      if (!isAdmin) {
+        return sock.sendMessage(remoteJid, {
+          text: "❌ Hanya admin yang bisa mengubah deskripsi grup!",
+        });
+      }
+
+      const newDesc = textMessage.slice(11).trim(); // Ambil teks setelah "!setdescgc "
+
+      if (!newDesc) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan format: *!setdescgc [deskripsi baru]*",
+        });
+      }
+
+      try {
+        await sock.groupUpdateDescription(remoteJid, newDesc);
+        sock.sendMessage(remoteJid, {
+          text: `✅ Deskripsi grup berhasil diubah menjadi:\n\n${newDesc}`,
+        });
+      } catch (error) {
+        console.error("Gagal mengubah deskripsi grup:", error);
+        sock.sendMessage(remoteJid, {
+          text: "❌ Gagal mengubah deskripsi grup. Pastikan bot adalah admin grup!",
+        });
+      }
+    } else if (textMessage === "!groupinfo") {
+      const isGroup = remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan dalam grup.",
+        });
+      }
+
+      try {
+        // Mengambil metadata grup
+        const groupMetadata = await sock.groupMetadata(remoteJid);
+        const groupName = groupMetadata.subject || "Tidak diketahui";
+        const groupDesc = groupMetadata.desc
+          ? groupMetadata.desc
+          : "Tidak ada deskripsi.";
+        const totalMembers = groupMetadata.participants.length;
+
+        // Ambil daftar admin dan ubah format untuk mention
+        const admins = groupMetadata.participants
+          .filter((member) => member.admin)
+          .map((member) => member.id);
+
+        let message = `📌 *Informasi Grup*\n\n`;
+        message += `🏷️ *Nama:* ${groupName}\n`;
+        message += `📝 *Deskripsi:* ${groupDesc}\n`;
+        message += `👥 *Total Anggota:* ${totalMembers}\n`;
+        message += `🔰 *Admin:* ${
+          admins.length > 0
+            ? admins.map((a) => `@${a.split("@")[0]}`).join(", ")
+            : "Tidak ada admin"
+        }\n`;
+
+        await sock.sendMessage(remoteJid, {
+          text: message,
+          mentions: admins, // Menggunakan array mentions agar benar-benar mention admin
+        });
+      } catch (error) {
+        console.error("❌ Error saat mengambil informasi grup:", error);
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gagal mengambil informasi grup. Pastikan bot adalah admin!",
+        });
+      }
     }
 
     // TEST

@@ -517,6 +517,50 @@ async function startBot() {
     // NEW FITUR (VOTING)
     else if (textMessage.startsWith("!vote")) {
       handleVoteCommand(remoteJid, sock, textMessage);
+    } else if (textMessage.startsWith("!poll")) {
+      handlePollCommand(remoteJid, sock, textMessage);
+    } else if (textMessage.startsWith("!setnamegc ")) {
+      // Cek apakah pesan dikirim dari grup
+      const isGroup = remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan dalam grup.",
+        });
+      }
+
+      // Ambil metadata grup untuk cek admin
+      const groupMetadata = await sock.groupMetadata(remoteJid);
+      const participant = groupMetadata.participants.find(
+        (p) => p.id === sender
+      );
+      const isAdmin =
+        participant?.admin === "admin" || participant?.admin === "superadmin";
+
+      if (!isAdmin) {
+        return sock.sendMessage(remoteJid, {
+          text: "❌ Hanya admin yang bisa mengubah nama grup!",
+        });
+      }
+
+      const newName = textMessage.slice(11).trim(); // Ambil teks setelah "!setnamegc "
+
+      if (!newName) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Gunakan format: *!setnamegc [nama baru]*",
+        });
+      }
+
+      try {
+        await sock.groupUpdateSubject(remoteJid, newName);
+        sock.sendMessage(remoteJid, {
+          text: `✅ Nama grup berhasil diubah menjadi: *${newName}*`,
+        });
+      } catch (error) {
+        console.error("Gagal mengubah nama grup:", error);
+        sock.sendMessage(remoteJid, {
+          text: "❌ Gagal mengubah nama grup. Pastikan bot adalah admin grup!",
+        });
+      }
     }
 
     // TEST
@@ -2855,6 +2899,122 @@ async function handleVoteCommand(remoteJid, sock, textMessage) {
     });
   }
 }
+// POLING
+const activePolls = {}; // Menyimpan polling yang sedang berlangsung
+
+async function handlePollCommand(remoteJid, sock, textMessage) {
+  try {
+    const args = textMessage.split(" ").slice(1);
+    const command = args[0];
+
+    if (command === "mulai") {
+      // Memulai polling
+      const pollData = textMessage.slice("!poll mulai".length).trim();
+      const [question, ...options] = pollData.split("|").map((s) => s.trim());
+
+      if (!question || options.length < 2) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Format salah! Gunakan: *!poll mulai Pertanyaan | Opsi1 | Opsi2 | ...*",
+        });
+      }
+
+      activePolls[remoteJid] = { question, options, votes: {} };
+
+      let pollMessage = `📊 *Polling Dimulai!*\n\n❓ *${question}*\n`;
+      options.forEach((opt, i) => {
+        pollMessage += `\n${i + 1}. ${opt}`;
+      });
+      pollMessage += `\n\nKetik *!poll pilih [nomor opsi]* untuk memberikan suara (bisa memilih lebih dari satu)!`;
+
+      return await sock.sendMessage(remoteJid, { text: pollMessage });
+    } else if (command === "pilih") {
+      // Memberikan suara pada polling
+      const voteNumber = parseInt(args[1]);
+
+      if (!activePolls[remoteJid]) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada polling yang aktif!",
+        });
+      }
+
+      if (
+        isNaN(voteNumber) ||
+        voteNumber < 1 ||
+        voteNumber > activePolls[remoteJid].options.length
+      ) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Pilihan tidak valid! Gunakan nomor opsi yang tersedia.",
+        });
+      }
+
+      const sender = remoteJid.split("@")[0]; // Menggunakan nomor sebagai ID pemilih
+      if (!activePolls[remoteJid].votes[sender]) {
+        activePolls[remoteJid].votes[sender] = [];
+      }
+
+      if (!activePolls[remoteJid].votes[sender].includes(voteNumber)) {
+        activePolls[remoteJid].votes[sender].push(voteNumber);
+      }
+
+      return await sock.sendMessage(remoteJid, {
+        text: "✅ Suara Anda telah tercatat!",
+      });
+    } else if (command === "hasil") {
+      // Menampilkan hasil polling
+      if (!activePolls[remoteJid]) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada polling yang aktif!",
+        });
+      }
+
+      const pollData = activePolls[remoteJid];
+      const voteCounts = pollData.options.map(() => 0);
+      let totalVotes = 0;
+
+      Object.values(pollData.votes).forEach((votes) => {
+        votes.forEach((vote) => {
+          voteCounts[vote - 1]++;
+          totalVotes++;
+        });
+      });
+
+      let resultMessage = `📊 *Hasil Polling:*\n\n❓ *${pollData.question}*\n`;
+      pollData.options.forEach((opt, i) => {
+        const percentage =
+          totalVotes === 0
+            ? 0
+            : ((voteCounts[i] / totalVotes) * 100).toFixed(1);
+        resultMessage += `\n${i + 1}. ${opt} - ${
+          voteCounts[i]
+        } suara (${percentage}%)`;
+      });
+
+      return await sock.sendMessage(remoteJid, { text: resultMessage });
+    } else if (command === "hapus") {
+      // Menghapus polling
+      if (!activePolls[remoteJid]) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada polling yang aktif!",
+        });
+      }
+
+      delete activePolls[remoteJid];
+      return await sock.sendMessage(remoteJid, {
+        text: "🗑️ Polling telah dihapus!",
+      });
+    } else {
+      return await sock.sendMessage(remoteJid, {
+        text: "⚠️ Perintah tidak dikenali. Gunakan *!poll mulai/pilih/hasil/hapus*",
+      });
+    }
+  } catch (error) {
+    console.error("Error handling poll command:", error.message);
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Terjadi kesalahan dalam fitur polling.",
+    });
+  }
+}
+
 
 
 startBot();

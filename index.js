@@ -514,6 +514,11 @@ async function startBot() {
       }
     }
 
+    // NEW FITUR (VOTING)
+    else if (textMessage.startsWith("!vote")) {
+      handleVoteCommand(remoteJid, sock, textMessage);
+    }
+
     // TEST
     else if (textMessage.startsWith("!roll")) {
       rollDice(remoteJid, sock);
@@ -2653,8 +2658,6 @@ function tambahRapat(judul, tanggal, jabatan = null, nama = null) {
   return `✅ Rapat *${judul}* pada *${tanggal}* berhasil ditambahkan!`;
 }
 
-
-
 function tampilkanDaftarRapat(judul, tanggal = null) {
   let data = loadData();
   if (!data[judul]) {
@@ -2692,7 +2695,6 @@ function tampilkanDaftarRapat(judul, tanggal = null) {
 
   return pesan;
 }
-
 
 function salinRapat(sumber, tujuan) {
   let data = loadData();
@@ -2753,6 +2755,106 @@ function absen(judul, tanggal, nama, status = "✅") {
   return `✅ ${nama} telah absen di *${judul}* pada *${tanggal}* dengan status: *${status}*`;
 }
 
+// NEW FITUR
+// VOting
+const activeVotes = {}; // Menyimpan voting yang sedang berjalan
+
+async function handleVoteCommand(remoteJid, sock, textMessage) {
+  try {
+    const args = textMessage.split(" ").slice(1);
+    const command = args[0];
+
+    if (command === "mulai") {
+      // Memulai voting
+      const voteData = textMessage.slice("!vote mulai".length).trim();
+      const [question, ...options] = voteData.split("|").map((s) => s.trim());
+
+      if (!question || options.length < 2) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Format salah! Gunakan: *!vote mulai Pertanyaan | Opsi1 | Opsi2 | ...*",
+        });
+      }
+
+      activeVotes[remoteJid] = { question, options, votes: {} };
+
+      let voteMessage = `📊 *Voting Dimulai!*\n\n❓ *${question}*\n`;
+      options.forEach((opt, i) => {
+        voteMessage += `\n${i + 1}. ${opt}`;
+      });
+      voteMessage += `\n\nKetik *!vote pilih [nomor opsi]* untuk memilih!`;
+
+      return await sock.sendMessage(remoteJid, { text: voteMessage });
+    } else if (command === "pilih") {
+      // Memberikan suara
+      const voteNumber = parseInt(args[1]);
+
+      if (!activeVotes[remoteJid]) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada voting yang aktif!",
+        });
+      }
+
+      if (
+        isNaN(voteNumber) ||
+        voteNumber < 1 ||
+        voteNumber > activeVotes[remoteJid].options.length
+      ) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Pilihan tidak valid! Gunakan nomor opsi yang tersedia.",
+        });
+      }
+
+      const sender = remoteJid.split("@")[0]; // Menggunakan nomor sebagai ID pemilih
+      activeVotes[remoteJid].votes[sender] = voteNumber;
+
+      return await sock.sendMessage(remoteJid, {
+        text: "✅ Suara Anda telah tercatat!",
+      });
+    } else if (command === "hasil") {
+      // Menampilkan hasil voting
+      if (!activeVotes[remoteJid]) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada voting yang aktif!",
+        });
+      }
+
+      const voteData = activeVotes[remoteJid];
+      const voteCounts = voteData.options.map(() => 0);
+
+      Object.values(voteData.votes).forEach((vote) => {
+        voteCounts[vote - 1]++;
+      });
+
+      let resultMessage = `📊 *Hasil Voting:*\n\n❓ *${voteData.question}*\n`;
+      voteData.options.forEach((opt, i) => {
+        resultMessage += `\n${i + 1}. ${opt} - ${voteCounts[i]} suara`;
+      });
+
+      return await sock.sendMessage(remoteJid, { text: resultMessage });
+    } else if (command === "hapus") {
+      // Menghapus voting
+      if (!activeVotes[remoteJid]) {
+        return await sock.sendMessage(remoteJid, {
+          text: "⚠️ Tidak ada voting yang aktif!",
+        });
+      }
+
+      delete activeVotes[remoteJid];
+      return await sock.sendMessage(remoteJid, {
+        text: "🗑️ Voting telah dihapus!",
+      });
+    } else {
+      return await sock.sendMessage(remoteJid, {
+        text: "⚠️ Perintah tidak dikenali. Gunakan *!vote mulai/pilih/hasil/hapus*",
+      });
+    }
+  } catch (error) {
+    console.error("Error handling vote command:", error.message);
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Terjadi kesalahan dalam fitur voting.",
+    });
+  }
+}
 
 
 startBot();

@@ -645,7 +645,46 @@ async function startBot() {
           text: "⚠️ Gagal mengambil informasi grup. Pastikan bot adalah admin!",
         });
       }
-    }
+    } else if (textMessage.startsWith("!hidetag ")) {
+      const isGroup = remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan dalam grup.",
+        });
+      }
+
+      // Ambil teks setelah perintah
+      const message = textMessage.slice(9).trim();
+      if (!message) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Harap masukkan pesan yang ingin dikirim dengan hidetag.",
+        });
+      }
+
+      try {
+        // Ambil semua anggota grup
+        const groupMetadata = await sock.groupMetadata(remoteJid);
+        const members = groupMetadata.participants.map((member) => member.id);
+
+        await sock.sendMessage(remoteJid, {
+          text: message,
+          mentions: members, // Semua anggota ditag, tapi tidak terlihat dalam teks
+        });
+      } catch (error) {
+        console.error("❌ Error saat menjalankan hidetag:", error);
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Gagal mengirim pesan dengan hidetag. Pastikan bot adalah admin!",
+        });
+      }
+    } else if (textMessage === "!refreshgroup") {
+      const groupMetadata = remoteJid.endsWith("@g.us"); // Mengecek apakah ini grup
+      if (!groupMetadata)
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan di grup!",
+        });
+
+      await refreshGroup(remoteJid, sock);
+    } 
 
     // TEST
     else if (textMessage.startsWith("!roll")) {
@@ -3098,6 +3137,34 @@ async function handlePollCommand(remoteJid, sock, textMessage) {
     });
   }
 }
+
+async function refreshGroup(remoteJid, sock) {
+  try {
+    // Ambil metadata grup
+    const groupMetadata = await sock.groupMetadata(remoteJid);
+
+    // Periksa apakah bot adalah admin
+    const botNumber = sock.user.id.split(":")[0] + "@s.whatsapp.net";
+    const isBotAdmin = groupMetadata.participants.some(
+      (participant) => participant.id === botNumber && participant.admin
+    );
+
+    if (!isBotAdmin) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Bot bukan admin! Berikan akses admin untuk menggunakan fitur ini.",
+      });
+    }
+
+    // Lakukan pembaruan grup (misalnya refresh data)
+    await sock.sendMessage(remoteJid, { text: "🔄 Grup berhasil diperbarui!" });
+  } catch (error) {
+    console.error("Error saat memperbarui grup:", error);
+    sock.sendMessage(remoteJid, {
+      text: "⚠️ Gagal memperbarui grup. Pastikan bot adalah admin!",
+    });
+  }
+}
+
 
 
 

@@ -2209,7 +2209,7 @@ async function checkGroupSchedule(sock) {
     const nowWITA = moment().tz("Asia/Makassar").format("HH:mm");
     const nowWIT = moment().tz("Asia/Jayapura").format("HH:mm");
 
-    // console.log(`⏰ Mengecek jadwal...`);
+    console.log(`⏰ Mengecek jadwal...`);
     // console.log(`🔹 WIB: ${nowWIB} | WITA: ${nowWITA} | WIT: ${nowWIT}`);
 
     for (const group in groupSchedules) {

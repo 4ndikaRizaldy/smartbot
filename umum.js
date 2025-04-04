@@ -1,3 +1,14 @@
+const moment = require("moment");
+require("moment-hijri");
+require("moment-timezone");
+const axios = require("axios");
+const translate = require("google-translate-api-x");
+
+const {
+  validLanguages,
+  getRandomFakta,
+  pantunList,
+} = require("./data");
 /* 📌 *INFO & UTILITAS* 
 🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
 🔹 *!ping* ➝ 🏓 Mengecek apakah bot aktif  

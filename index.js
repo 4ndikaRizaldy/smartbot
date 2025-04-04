@@ -9,14 +9,10 @@ require("moment-timezone");
 const axios = require("axios");
 const math = require("mathjs");
 const translate = require("google-translate-api-x");
+const fs = require("fs");
 
 const {
-  validLanguages,
   autoResponses,
-  logicQuestions,
-  getRandomFakta,
-  pantunList,
-  daftarKata,
 } = require("./data");
 
 const {
@@ -71,8 +67,7 @@ const {
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
 
-let guessingGame = {};
-let logicGame = {};
+
 let botActive = true; //default aktif
 let startTime = Date.now(); // Simpan waktu saat bot dihidupkan
 

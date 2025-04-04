@@ -1,3 +1,8 @@
+require("dotenv").config();
+const moment = require("moment");
+require("moment-hijri");
+require("moment-timezone");
+const fs = require("fs");
 /* AWAL */
 /* GRUP DAN ADMIN */
 /* ⏰ *PENGINGAT (REMINDER)*  
@@ -10,7 +15,6 @@
 🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]* | *!stoprepeat* */
 
 // REMINDER
-const fs = require("fs");
 const remindersFile = "reminders.json";
 let repeatReminders = {};
 
@@ -674,5 +678,3 @@ module.exports = {
   promoteMember,
   demoteMember,
 };
-
-

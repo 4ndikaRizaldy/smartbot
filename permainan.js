@@ -1,3 +1,10 @@
+const {
+  logicQuestions,
+  daftarKata,
+} = require("./data");
+
+let guessingGame = {};
+let logicGame = {};
 /* 🎮 *PERMAINAN & TEBAK-TEBAKAN* 
 🎲 *Tebak Angka* ➝ *!tebakangka* | *!jangka [angka]*  
 🧠 *Tebak Logika* ➝ *!tebaklogika* | *!jlogika [jawaban]* | *!kluelogika*  

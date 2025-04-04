@@ -1,6 +1,8 @@
 require("dotenv").config();
-const makeWASocket = require("@whiskeysockets/baileys").default;
-const { useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, useSingleFileAuthState, Browsers } = require('@whiskeysockets/baileys');
+const pino = require('pino');
+// Buat logger yang hanya menampilkan error (atau bahkan tidak sama sekali)
+const logger = pino({ level: 'error' }); // bisa diganti 'silent' kalau mau tanpa log sama sekali
 const moment = require("moment");
 require("moment-hijri");
 require("moment-timezone");
@@ -101,7 +103,13 @@ async function handleAutoResponse(message, remoteJid, sender, sock) {
 // STARTBOT/HIDUPKAN BOT
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
-  const sock = makeWASocket({ auth: state, printQRInTerminal: true });
+  
+const sock = makeWASocket({
+  auth: state,
+  printQRInTerminal: true,
+  logger // tambahkan logger ini
+});
+
 
   // Event handler untuk koneksi dan kredensial
   sock.ev.on("creds.update", saveCreds);

@@ -63,6 +63,47 @@ async function startBot() {
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  const recentEvents = new Map(); // Cache event untuk mencegah duplikasi
+
+  sock.ev.on("group-participants.update", async (update) => {
+    const { id, participants, action } = update;
+
+    console.log(`📢 Event terdeteksi: ${action} di grup ${id}`);
+
+    for (let participant of participants) {
+      let eventKey = `${id}_${participant}_${action}`; // Unik per grup + pengguna + aksi
+
+      // Cek apakah event ini baru saja diproses dalam 5 detik terakhir
+      if (recentEvents.has(eventKey)) {
+        console.log(`⏳ Event ${eventKey} sudah diproses, abaikan...`);
+        continue;
+      }
+
+      recentEvents.set(eventKey, Date.now()); // Simpan waktu event
+      setTimeout(() => recentEvents.delete(eventKey), 5000); // Hapus dari cache setelah 5 detik
+
+      let userName = `@${participant.split("@")[0]}`;
+      let groupInfo = await sock.groupMetadata(id);
+      let groupName = groupInfo.subject;
+
+      console.log(`🔹 Memproses ${action} untuk ${userName} di ${groupName}`);
+
+      if (action === "add") {
+        let welcomeMessage = await getWelcomeMessage(
+          id,
+          participant,
+          groupName
+        );
+        sock.sendMessage(id, {
+          text: welcomeMessage,
+          mentions: [participant],
+        });
+      } else if (action === "remove") {
+        let leaveMessage = await getLeaveMessage(id, participant, groupName);
+        sock.sendMessage(id, { text: leaveMessage, mentions: [participant] });
+      }
+    }
+  });
   // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
@@ -109,6 +150,8 @@ async function startBot() {
     // Jika bot dalam keadaan nonaktif, abaikan semua perintah kecuali !on
     if (!botActive) return;
 
+    // **Panggil fungsi CRUD**
+    await handleCustomMessages(textMessage, remoteJid, sock);
     // Penanganan respons otomatis (auto-response)
     await handleAutoResponse(textMessage, remoteJid, sender, sock);
 
@@ -684,7 +727,7 @@ async function startBot() {
         });
 
       await refreshGroup(remoteJid, sock);
-    } 
+    }
 
     // TEST
     else if (textMessage.startsWith("!roll")) {
@@ -693,6 +736,46 @@ async function startBot() {
       getFact(remoteJid, sock);
     } else if (textMessage.startsWith("!joke")) {
       getJoke(remoteJid, sock);
+    } else if (textMessage.startsWith("!setwelcome")) {
+      if (!remoteJid.endsWith("@g.us")) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan di grup.",
+        });
+        return;
+      }
+
+      const message = textMessage.replace("!setwelcome", "").trim();
+      if (!message) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Harap masukkan pesan selamat datang.",
+        });
+        return;
+      }
+
+      setWelcomeMessage(remoteJid, message); // Hapus sock, karena tidak digunakan dalam fungsi
+      sock.sendMessage(remoteJid, {
+        text: "✅ Pesan selamat datang telah diatur!",
+      });
+    } else if (textMessage.startsWith("!setleave")) {
+      if (!remoteJid.endsWith("@g.us")) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan di grup.",
+        });
+        return;
+      }
+
+      const message = textMessage.replace("!setleave", "").trim();
+      if (!message) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Harap masukkan pesan perpisahan.",
+        });
+        return;
+      }
+
+      setLeaveMessage(remoteJid, message); // Hapus sock karena tidak dibutuhkan dalam fungsi
+      sock.sendMessage(remoteJid, {
+        text: "✅ Pesan perpisahan telah diatur!",
+      });
     } else if (textMessage.startsWith("!countdown")) {
       const eventDate = textMessage.replace("!countdown", "").trim(); // Ambil tanggal acara dari input pengguna
       console.log("Event Date Diterima: ", eventDate); // Log tanggal yang diterima dari input pengguna
@@ -3165,7 +3248,142 @@ async function refreshGroup(remoteJid, sock) {
   }
 }
 
+const welcomeleave = "./welcome_leave.json";
 
+// Cache untuk mencegah duplikasi event
+const recentEvents = new Set();
+
+// Load data dari file JSON
+async function loadData() {
+  if (!fs.existsSync(welcomeleave)) return {};
+  let rawData = await fs.promises.readFile(welcomeleave, "utf-8");
+  return JSON.parse(rawData);
+}
+
+// Simpan data ke file JSON
+async function saveData(data) {
+  await fs.promises.writeFile(welcomeleave, JSON.stringify(data, null, 2));
+}
+
+// Set pesan selamat datang
+async function setWelcomeMessage(groupId, message) {
+  let data = await loadData();
+  data[groupId] = data[groupId] || {};
+  data[groupId].welcome = message;
+  await saveData(data);
+  return `✅ Pesan selamat datang telah diatur untuk grup ini.`;
+}
+
+// Set pesan perpisahan
+async function setLeaveMessage(groupId, message) {
+  let data = await loadData();
+  data[groupId] = data[groupId] || {};
+  data[groupId].leave = message;
+  await saveData(data);
+  return `✅ Pesan perpisahan telah diatur untuk grup ini.`;
+}
+
+// Mendapatkan pesan selamat datang
+async function getWelcomeMessage(groupId, participant, groupName) {
+  let data = await loadData();
+  let userMention = `@${participant.split("@")[0]}`;
+  return data[groupId]?.welcome
+    ? data[groupId].welcome
+        .replace("@user", userMention)
+        .replace("@group", groupName)
+    : `Selamat datang di ${groupName}, ${userMention}!`;
+}
+
+// Mendapatkan pesan perpisahan
+async function getLeaveMessage(groupId, participant, groupName) {
+  let data = await loadData();
+  let userMention = `@${participant.split("@")[0]}`;
+  return data[groupId]?.leave
+    ? data[groupId].leave
+        .replace("@user", userMention)
+        .replace("@group", groupName)
+    : `Selamat tinggal, ${userMention}!`;
+}
+
+const dbFile = "custom_messages.json";
+
+// **Load database dari file JSON**
+function loadDatabase() {
+  if (!fs.existsSync(dbFile)) {
+    fs.writeFileSync(dbFile, JSON.stringify({}, null, 2));
+  }
+  return JSON.parse(fs.readFileSync(dbFile));
+}
+
+// **Simpan database ke file JSON**
+function saveDatabase(db) {
+  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
+}
+
+// **Fungsi CRUD untuk pesan custom**
+async function handleCustomMessages(textMessage, remoteJid, sock) {
+  let db = loadDatabase();
+
+  // **Create: Tambah perintah baru**
+  if (textMessage.startsWith("!add ")) {
+    let [cmd, ...response] = textMessage.slice(5).split(" ");
+    if (!cmd || response.length === 0) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Format: !add <perintah> <balasan>",
+      });
+    }
+    db[cmd] = response.join(" ");
+    saveDatabase(db);
+    return sock.sendMessage(remoteJid, {
+      text: `✅ Perintah *${cmd}* ditambahkan!`,
+    });
+  }
+
+  // **Read: Lihat semua perintah custom**
+  if (textMessage === "!list") {
+    let commands = Object.keys(db).join("\n");
+    return sock.sendMessage(remoteJid, {
+      text: `📜 *Daftar perintah custom:*\n${
+        commands || "Belum ada perintah."
+      }`,
+    });
+  }
+
+  // **Update: Ubah balasan perintah**
+  if (textMessage.startsWith("!update ")) {
+    let [cmd, ...response] = textMessage.slice(8).split(" ");
+    if (!db[cmd]) {
+      return sock.sendMessage(remoteJid, {
+        text: `⚠️ Perintah *${cmd}* tidak ditemukan!`,
+      });
+    }
+    db[cmd] = response.join(" ");
+    saveDatabase(db);
+    return sock.sendMessage(remoteJid, {
+      text: `🔄 Perintah *${cmd}* diperbarui!`,
+    });
+  }
+
+  // **Delete: Hapus perintah**
+  if (textMessage.startsWith("!delete ")) {
+    let cmd = textMessage.split(" ")[1];
+    if (!db[cmd]) {
+      return sock.sendMessage(remoteJid, {
+        text: `⚠️ Perintah *${cmd}* tidak ditemukan!`,
+      });
+    }
+    delete db[cmd];
+    saveDatabase(db);
+    return sock.sendMessage(remoteJid, {
+      text: `🗑️ Perintah *${cmd}* dihapus!`,
+    });
+  }
+
+  // **Balas jika perintah ada di database**
+  if (db[textMessage]) {
+    return sock.sendMessage(remoteJid, { text: db[textMessage] });
+  }
+}
 
 
 startBot();

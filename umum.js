@@ -39,26 +39,17 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 👥 *MANAJEMEN DIVISI* (Admin)  
 ━━━━━━━━━━━━━━━━━━  
 📢 *Tag Divisi* ➝ *!tagdivisi [nama_divisi]*  
-  *Contoh:* \`!tagdivisi IT\`  
 📜 *Daftar Divisi* ➝ *!listdivisi*  
-  *Contoh:* \`!listdivisi\`  
 ➕ *Tambah User ke Divisi* ➝ *!setdivisi @user [nama_divisi]*  
-  *Contoh:* \`!setdivisi @johndoe IT\`  
 ❌ *Hapus User dari Divisi* ➝ *!removedivisi @user [nama_divisi]*  
-  *Contoh:* \`!removedivisi @johndoe IT\`  
 🏢 *Tambah Divisi Baru* ➝ *!adddivisi [nama_divisi]*  
-  *Contoh:* \`!adddivisi Keuangan\`  
 
 🎮 *PERMAINAN & TEBAK-TEBAKAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 🎲 *Tebak Angka* ➝ *!tebakangka*  
-  *Contoh:* \`!tebakangka\` → *Bot akan memilih angka acak untuk ditebak*  
 🧠 *Tebak Logika* ➝ *!tebaklogika*  
-  *Contoh:* \`!tebaklogika\` → *Bot akan memberikan teka-teki logika*  
 🔠 *Acak Huruf* ➝ *!acakhuruf*  
-  *Contoh:* \`!acakhuruf\` → *Bot mengacak huruf dari sebuah kata*  
 ⚔️ *1vs1 Acak Huruf* ➝ *!tantang @username*  
-  *Contoh:* \`!tantang @johndoe\`  
 🔥 *Survival Mode* ➝ *!survival*  
 🏆 *Leaderboard* ➝ *!leaderboard*  
 🎖 *Rank & Hadiah Virtual* ➝ *!rank*  
@@ -66,64 +57,60 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 📚 *INFO & PENGETAHUAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 📅 *Tanggal* ➝ *!tanggal*  
-  *Contoh:* \`!tanggal\` → *Menampilkan tanggal Masehi & Hijriah*  
 💡 *Fakta Unik* ➝ *!faktaunik*  
-  *Contoh:* \`!faktaunik\` → *Bot memberikan fakta menarik*  
 📖 *Quran* ➝ *!quran [surat:ayat]*  
-  *Contoh:* \`!quran 2:255\`  
 🌍 *Wikipedia* ➝ *!wiki [pertanyaan]*  
-  *Contoh:* \`!wiki Albert Einstein\`  
 🔍 *Pencarian Bing* ➝ *!bing [pertanyaan]*  
-  *Contoh:* \`!bing cuaca hari ini\`  
 📜 *Pantun* ➝ *!pantun*  
 🌟 *Motivasi* ➝ *!motivasi*  
 
 🔢 *MATEMATIKA* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 🧮 *Kalkulator* ➝ *!hitung [ekspresi]*  
-  *Contoh:* \`!hitung 5+3*2\` → *Hasil: 11*  
 
 🌍 *BAHASA & TERJEMAHAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 🔄 *Terjemahan* ➝ *!translate [kode bahasa] [teks]*  
-  *Contoh:* \`!translate en Saya suka kopi\`  
 🌏 *Kode Bahasa* ➝ *!kodenegara*  
 
 ⏰ *PENGINGAT (REMINDER)* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 📅 *Setel Pengingat* ➝ *!setremind [waktu] [pesan]*  
-  *Contoh:* \`!setremind 2025-04-01 08:00 Rapat pagi\`  
 📜 *Lihat Pengingat* ➝ *!listremind*  
 🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]*  
 
 📚 *MANAJEMEN GURU & AUTO-RESPONSE* (Admin)  
 ━━━━━━━━━━━━━━━━━━  
 👨‍🏫 *Tambah Guru* ➝ *!tambahguru [nomor]*  
-  *Contoh:* \`!tambahguru 62812345678\`  
 📜 *Daftar Guru* ➝ *!listguru*  
-  *Contoh:* \`!listguru\`  
 ❌ *Hapus Guru* ➝ *!hapusguru [nomor]*  
-  *Contoh:* \`!hapusguru 62812345678\`  
 🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
-  *Contoh:* \`!ajarin Apa itu AI? = AI adalah kecerdasan buatan.\`  
 📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
 🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*  
 
 👥 *GRUP & ADMIN* (Admin)  
 ━━━━━━━━━━━━━━━━━━  
 📢 *Tag Semua* ➝ *!tagall [pesan opsional]*  
-  *Contoh:* \`!tagall Halo semua!\`  
 🔓 *Buka/Tutup Grup* ➝ *!bukagrup* | *!tutupgrup*  
-  *Contoh:* \`!tutupgrup\`  
 ➕ *Tambah Anggota* ➝ *!add [nomor]*  
-  *Contoh:* \`!add 62812345678\`  
 🚪 *Keluarkan Anggota* ➝ *!remove [nomor]*  
-  *Contoh:* \`!remove 62812345678\`  
+
+💬 *Greeting Management*  
+━━━━━━━━━━━━━━━━━━  
+✍️ *Set Welcome Message* ➝ *!setwelcome [pesan]*  
+  *Contoh:* \`!setwelcome Selamat datang di @group, @user!\`  
+❌ *Clear Welcome Message* ➝ *!clearwelcome*  
+📥 *Get Welcome Message* ➝ *!getwelcome*  
+✍️ *Set Leave Message* ➝ *!setleave [pesan]*  
+  *Contoh:* \`!setleave Selamat jalan, @user!\`  
+❌ *Clear Leave Message* ➝ *!clearleave*  
+📤 *Get Leave Message* ➝ *!getleave*  
+✅ *Aktifkan Greeting* ➝ *!greeting on*  
+❌ *Nonaktifkan Greeting* ➝ *!greeting off*  
 
 📩 *SARAN & MASUKAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
 ✍️ *Kirim Kritik* ➝ *!kritik [pesan]*  
-  *Contoh:* \`!kritik Botnya keren!\`  
 
 🎲 *FITUR SERU* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
@@ -136,6 +123,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
   sock.sendMessage(from, { text: menuText });
 };
+
 
 // Fungsi untuk menghitung jumlah anggota grup
 const countGroupMembers = async (from, sock) => {

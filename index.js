@@ -1,8 +1,16 @@
 require("dotenv").config();
-const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, useSingleFileAuthState, Browsers } = require('@whiskeysockets/baileys');
-const pino = require('pino');
+const {
+  makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+  fetchLatestBaileysVersion,
+  makeInMemoryStore,
+  useSingleFileAuthState,
+  Browsers,
+} = require("@whiskeysockets/baileys");
+const pino = require("pino");
 // Buat logger yang hanya menampilkan error (atau bahkan tidak sama sekali)
-const logger = pino({ level: 'error' }); // bisa diganti 'silent' kalau mau tanpa log sama sekali
+const logger = pino({ level: "error" }); // bisa diganti 'silent' kalau mau tanpa log sama sekali
 const moment = require("moment");
 require("moment-hijri");
 require("moment-timezone");
@@ -11,9 +19,7 @@ const math = require("mathjs");
 const translate = require("google-translate-api-x");
 const fs = require("fs");
 
-const {
-  autoResponses,
-} = require("./data");
+const { autoResponses } = require("./data");
 
 const {
   showMenu,
@@ -67,7 +73,6 @@ const {
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
 
-
 let botActive = true; //default aktif
 let startTime = Date.now(); // Simpan waktu saat bot dihidupkan
 
@@ -98,13 +103,12 @@ async function handleAutoResponse(message, remoteJid, sender, sock) {
 // STARTBOT/HIDUPKAN BOT
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
-  
-const sock = makeWASocket({
-  auth: state,
-  printQRInTerminal: true,
-  logger // tambahkan logger ini
-});
 
+  const sock = makeWASocket({
+    auth: state,
+    printQRInTerminal: true,
+    logger, // tambahkan logger ini
+  });
 
   // Event handler untuk koneksi dan kredensial
   sock.ev.on("creds.update", saveCreds);
@@ -118,44 +122,63 @@ const sock = makeWASocket({
   const recentEvents = new Map(); // Cache event untuk mencegah duplikasi
 
   sock.ev.on("group-participants.update", async (update) => {
-    const { id, participants, action } = update;
+  const { id, participants, action } = update;
 
-    console.log(`📢 Event terdeteksi: ${action} di grup ${id}`);
+  console.log(`📢 Event terdeteksi: ${action} di grup ${id}`);
+
+  try {
+    // Ambil metadata grup sekali saja
+    let groupInfo = await sock.groupMetadata(id);
+    let groupName = groupInfo.subject || "Grup";
+
+    // Cek status greeting
+    let isGreetingEnabled = await getGreetingStatus(id);
+    console.log(`🔍 Greeting status untuk grup ${groupName}: ${isGreetingEnabled}`);
+
+    if (!isGreetingEnabled) {
+      console.log(`⏳ Greeting dinonaktifkan untuk grup ${groupName}, abaikan...`);
+      return; // Jangan kirim pesan jika greeting dimatikan
+    }
 
     for (let participant of participants) {
-      let eventKey = `${id}_${participant}_${action}`; // Unik per grup + pengguna + aksi
+      let eventKey = `${id}_${participant}_${action}`;
 
-      // Cek apakah event ini baru saja diproses dalam 5 detik terakhir
       if (recentEvents.has(eventKey)) {
         console.log(`⏳ Event ${eventKey} sudah diproses, abaikan...`);
         continue;
       }
 
-      recentEvents.set(eventKey, Date.now()); // Simpan waktu event
-      setTimeout(() => recentEvents.delete(eventKey), 5000); // Hapus dari cache setelah 5 detik
+      recentEvents.set(eventKey, Date.now());
+      setTimeout(() => recentEvents.delete(eventKey), 5000);
 
-      let userName = `@${participant.split("@")[0]}`;
-      let groupInfo = await sock.groupMetadata(id);
-      let groupName = groupInfo.subject;
-
-      console.log(`🔹 Memproses ${action} untuk ${userName} di ${groupName}`);
+      console.log(`🔹 Memproses ${action} untuk ${participant} di ${groupName}`);
 
       if (action === "add") {
-        let welcomeMessage = await getWelcomeMessage(
-          id,
-          participant,
-          groupName
-        );
-        sock.sendMessage(id, {
-          text: welcomeMessage,
-          mentions: [participant],
-        });
+        let welcomeMessage = await getWelcomeMessage(id, participant, groupName);
+        console.log(`🔹 Pesan Selamat Datang: ${welcomeMessage}`);
+        if (welcomeMessage) {
+          sock.sendMessage(id, {
+            text: welcomeMessage,
+            mentions: [participant],
+          });
+        }
       } else if (action === "remove") {
         let leaveMessage = await getLeaveMessage(id, participant, groupName);
-        sock.sendMessage(id, { text: leaveMessage, mentions: [participant] });
+        console.log(`🔹 Pesan Perpisahan: ${leaveMessage}`);
+        if (leaveMessage) {
+          sock.sendMessage(id, {
+            text: leaveMessage,
+            mentions: [participant],
+          });
+        }
       }
     }
-  });
+  } catch (err) {
+    console.error(`❌ Terjadi kesalahan: ${err.message}`);
+  }
+});
+
+
   // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
@@ -340,6 +363,51 @@ const sock = makeWASocket({
       );
     } else if (textMessage.startsWith("!stopremind ")) {
       stopRepeatReminder(remoteJid, sender, textMessage, sock);
+    }
+
+    // GREETING
+    else if (textMessage.startsWith("!setwelcome ")) {
+      const message = textMessage.replace("!setwelcome", "").trim();
+      if (!message) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Harap masukkan pesan selamat datang.",
+        });
+        return;
+      }
+      const response = await setWelcomeMessage(remoteJid, message);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage.startsWith("!setleave ")) {
+      const message = textMessage.replace("!setleave", "").trim();
+      if (!message) {
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Harap masukkan pesan perpisahan.",
+        });
+        return;
+      }
+      const response = await setLeaveMessage(remoteJid, message);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage === "!getwelcome") {
+      const response = await getWelcomeMessage(remoteJid);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage === "!getleave") {
+      const response = await getLeaveMessage(remoteJid);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage === "!clearwelcome") {
+      const response = await clearWelcomeMessage(remoteJid);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage === "!clearleave") {
+      const response = await clearLeaveMessage(remoteJid);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage === "!greeting on") {
+      const response = await setGreetingStatus(remoteJid, true);
+      console.log(`✅ Perintah !greeting on dijalankan. Response: ${response}`);
+      sock.sendMessage(remoteJid, { text: response });
+    } else if (textMessage === "!greeting off") {
+      const response = await setGreetingStatus(remoteJid, false);
+      console.log(
+        `✅ Perintah !greeting off dijalankan. Response: ${response}`
+      );
+      sock.sendMessage(remoteJid, { text: response });
     }
 
     // Penanganan pembelajaran (learning)
@@ -1012,7 +1080,6 @@ async function deleteLearnedResponse(textMessage, remoteJid, sock) {
     text: `✅ Berhasil menghapus: *"${question}"* dari daftar ajaran!`,
   });
 }
-
 
 /* 📩 *SARAN & MASUKAN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -1811,7 +1878,7 @@ async function handleCustomMessages(textMessage, remoteJid, sock) {
   let db = loadDatabase();
 
   // **Create: Tambah perintah baru**
-  if (textMessage.startsWith("!add ")) {
+  if (textMessage.startsWith("!addp ")) {
     let [cmd, ...response] = textMessage.slice(5).split(" ");
     if (!cmd || response.length === 0) {
       return sock.sendMessage(remoteJid, {
@@ -1871,5 +1938,107 @@ async function handleCustomMessages(textMessage, remoteJid, sock) {
   }
 }
 
+// FITUR GREETING
+const welcomeleave = "welcome_leave.json";
+
+// Cache untuk mencegah duplikasi event
+const recentEvents = new Set();
+
+// Load data dari file JSON
+async function loadData() {
+  if (!fs.existsSync(welcomeleave)) return {};
+  let rawData = await fs.promises.readFile(welcomeleave, "utf-8");
+  return JSON.parse(rawData);
+}
+
+// Simpan data ke file JSON
+async function saveData(data) {
+  await fs.promises.writeFile(welcomeleave, JSON.stringify(data, null, 2));
+}
+
+// Set pesan selamat datang
+async function setWelcomeMessage(groupId, message) {
+  let data = await loadData();
+  console.log(`Setting welcome message for group ${groupId}: ${message}`);
+  data[groupId] = data[groupId] || {};
+  data[groupId].welcome = message;
+  await saveData(data);
+  console.log("Data setelah diupdate:", data);
+  return "✅ Pesan selamat datang telah diatur untuk grup ini.";
+}
+
+async function setLeaveMessage(groupId, message) {
+  let data = await loadData();
+  console.log(`Setting leave message for group ${groupId}: ${message}`);
+  data[groupId] = data[groupId] || {};
+  data[groupId].leave = message;
+  await saveData(data);
+  console.log("Data setelah diupdate:", data);
+  return "✅ Pesan perpisahan telah diatur untuk grup ini.";
+}
+
+// Set status greeting (on/off)
+async function setGreetingStatus(groupId, status) {
+  let data = await loadData();
+  data[groupId] = data[groupId] || {};
+  data[groupId].greetingEnabled = status;
+  await saveData(data);
+  return `✅ Greeting telah ${
+    status ? "diaktifkan" : "dinonaktifkan"
+  } untuk grup ini.`;
+}
+
+// Get pesan selamat datang
+async function getWelcomeMessage(groupId, participant, groupName) {
+  let data = await loadData();
+  let userMention = `@${participant.split("@")[0]}`;
+  groupName = groupName || "Grup"; // Jika groupName tidak tersedia, gunakan "Grup"
+
+  if (data[groupId]?.welcome) {
+    return data[groupId].welcome
+      .replace("@user", userMention)
+      .replace("@group", groupName);
+  }
+
+  return `Selamat datang di ${groupName}, ${userMention}! Semoga betah ya.`;
+}
+
+// Get pesan perpisahan
+async function getLeaveMessage(groupId, participant, groupName) {
+  let data = await loadData();
+  let userMention = `@${participant.split("@")[0]}`;
+  groupName = groupName || "Grup";
+
+  if (data[groupId]?.leave) {
+    return data[groupId].leave
+      .replace("@user", userMention)
+      .replace("@group", groupName);
+  }
+
+  return `Selamat tinggal, ${userMention}! Semoga sukses di tempat baru.`;
+}
+
+
+// Get status greeting
+async function getGreetingStatus(groupId) {
+  let data = await loadData();
+  return data[groupId]?.greetingEnabled !== false;
+}
+
+// Clear pesan selamat datang
+async function clearWelcomeMessage(groupId) {
+  let data = await loadData();
+  if (data[groupId]?.welcome) delete data[groupId].welcome;
+  await saveData(data);
+  return "✅ Pesan selamat datang telah dihapus.";
+}
+
+// Clear pesan perpisahan
+async function clearLeaveMessage(groupId) {
+  let data = await loadData();
+  if (data[groupId]?.leave) delete data[groupId].leave;
+  await saveData(data);
+  return "✅ Pesan perpisahan telah dihapus.";
+}
 
 startBot();

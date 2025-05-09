@@ -788,46 +788,6 @@ const sock = makeWASocket({
       getFact(remoteJid, sock);
     } else if (textMessage.startsWith("!joke")) {
       getJoke(remoteJid, sock);
-    } else if (textMessage.startsWith("!setwelcome")) {
-      if (!remoteJid.endsWith("@g.us")) {
-        sock.sendMessage(remoteJid, {
-          text: "⚠️ Perintah ini hanya bisa digunakan di grup.",
-        });
-        return;
-      }
-
-      const message = textMessage.replace("!setwelcome", "").trim();
-      if (!message) {
-        sock.sendMessage(remoteJid, {
-          text: "⚠️ Harap masukkan pesan selamat datang.",
-        });
-        return;
-      }
-
-      setWelcomeMessage(remoteJid, message); // Hapus sock, karena tidak digunakan dalam fungsi
-      sock.sendMessage(remoteJid, {
-        text: "✅ Pesan selamat datang telah diatur!",
-      });
-    } else if (textMessage.startsWith("!setleave")) {
-      if (!remoteJid.endsWith("@g.us")) {
-        sock.sendMessage(remoteJid, {
-          text: "⚠️ Perintah ini hanya bisa digunakan di grup.",
-        });
-        return;
-      }
-
-      const message = textMessage.replace("!setleave", "").trim();
-      if (!message) {
-        sock.sendMessage(remoteJid, {
-          text: "⚠️ Harap masukkan pesan perpisahan.",
-        });
-        return;
-      }
-
-      setLeaveMessage(remoteJid, message); // Hapus sock karena tidak dibutuhkan dalam fungsi
-      sock.sendMessage(remoteJid, {
-        text: "✅ Pesan perpisahan telah diatur!",
-      });
     } else if (textMessage.startsWith("!countdown")) {
       const eventDate = textMessage.replace("!countdown", "").trim(); // Ambil tanggal acara dari input pengguna
       console.log("Event Date Diterima: ", eventDate); // Log tanggal yang diterima dari input pengguna
@@ -1829,63 +1789,6 @@ async function refreshGroup(remoteJid, sock) {
       text: "⚠️ Gagal memperbarui grup. Pastikan bot adalah admin!",
     });
   }
-}
-
-const welcomeleave = "./welcome_leave.json";
-
-// Cache untuk mencegah duplikasi event
-const recentEvents = new Set();
-
-// Load data dari file JSON
-async function loadData() {
-  if (!fs.existsSync(welcomeleave)) return {};
-  let rawData = await fs.promises.readFile(welcomeleave, "utf-8");
-  return JSON.parse(rawData);
-}
-
-// Simpan data ke file JSON
-async function saveData(data) {
-  await fs.promises.writeFile(welcomeleave, JSON.stringify(data, null, 2));
-}
-
-// Set pesan selamat datang
-async function setWelcomeMessage(groupId, message) {
-  let data = await loadData();
-  data[groupId] = data[groupId] || {};
-  data[groupId].welcome = message;
-  await saveData(data);
-  return `✅ Pesan selamat datang telah diatur untuk grup ini.`;
-}
-
-// Set pesan perpisahan
-async function setLeaveMessage(groupId, message) {
-  let data = await loadData();
-  data[groupId] = data[groupId] || {};
-  data[groupId].leave = message;
-  await saveData(data);
-  return `✅ Pesan perpisahan telah diatur untuk grup ini.`;
-}
-
-// Mendapatkan pesan selamat datang
-async function getWelcomeMessage(groupId, participant, groupName) {
-  let data = await loadData();
-  let userMention = `@${participant.split("@")[0]}`;
-  return data[groupId]?.welcome
-    ? data[groupId].welcome
-        .replace("@user", userMention)
-        .replace("@group", groupName)
-    : `Selamat datang di ${groupName}, ${userMention}!`;
-}
-
-// Mendapatkan pesan perpisahan
-async function getLeaveMessage(groupId, participant, groupName) {
-  let data = await loadData();
-  let userMention = `@${participant.split("@")[0]}`;
-  return data[groupId]?.leave
-    ? data[groupId].leave
-        .replace("@user", userMention)
-        .replace("@group", groupName)
-    : `Selamat tinggal, ${userMention}!`;
 }
 
 const dbFile = "custom_messages.json";

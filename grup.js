@@ -316,7 +316,7 @@ async function announceToAll(remoteJid, sender, sock, message) {
     }
 
     await sock.sendMessage(remoteJid, {
-      text: `📢 *Pengumuman!*\n\n${message}`,
+      text: `📢 *Sekilas Info!*\n\n${message}`,
       mentions: participants, // Mentions tanpa menampilkan nomor
     });
   } catch (error) {

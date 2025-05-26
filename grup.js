@@ -304,12 +304,19 @@ async function announceToAll(remoteJid, sender, sock, message) {
     const groupMetadata = await sock.groupMetadata(remoteJid);
     const participants = groupMetadata.participants.map((member) => member.id);
 
-    // Pastikan hanya admin yang bisa melakukan pengumuman
+    // Daftar nomor yang diizinkan walau bukan admin
+    const allowedUsers = ["6285253435963@s.whatsapp.net"];
+
+    // Daftar admin
     const groupAdmins = groupMetadata.participants
       .filter((member) => member.admin)
       .map((admin) => admin.id);
 
-    if (!groupAdmins.includes(sender)) {
+    const isAdmin = groupAdmins.includes(sender);
+    const isAllowedUser = allowedUsers.includes(sender);
+
+    // Cek hak akses
+    if (!isAdmin && !isAllowedUser) {
       return sock.sendMessage(remoteJid, {
         text: "⚠️ Kamu bukan admin grup!",
       });
@@ -317,13 +324,15 @@ async function announceToAll(remoteJid, sender, sock, message) {
 
     await sock.sendMessage(remoteJid, {
       text: `📢 *Sekilas Info!*\n\n${message}`,
-      mentions: participants, // Mentions tanpa menampilkan nomor
+      mentions: participants,
     });
+
   } catch (error) {
     console.error("Error sending announcement:", error);
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengirim pengumuman." });
   }
 }
+
 
 // Mapping zona waktu berdasarkan kode (WIB, WITA, WIT)
 const timeZones = {

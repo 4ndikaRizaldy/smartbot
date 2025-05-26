@@ -300,8 +300,6 @@ const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
 };
 
 // PENGUMUMAN
-const { isAdminOrAllowedUser } = require("../utils/groupAuth");
-
 async function announceToAll(remoteJid, sender, sock, message) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);

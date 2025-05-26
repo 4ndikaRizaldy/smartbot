@@ -122,62 +122,71 @@ async function startBot() {
   const recentEvents = new Map(); // Cache event untuk mencegah duplikasi
 
   sock.ev.on("group-participants.update", async (update) => {
-  const { id, participants, action } = update;
+    const { id, participants, action } = update;
 
-  console.log(`📢 Event terdeteksi: ${action} di grup ${id}`);
+    console.log(`📢 Event terdeteksi: ${action} di grup ${id}`);
 
-  try {
-    // Ambil metadata grup sekali saja
-    let groupInfo = await sock.groupMetadata(id);
-    let groupName = groupInfo.subject || "Grup";
+    try {
+      // Ambil metadata grup sekali saja
+      let groupInfo = await sock.groupMetadata(id);
+      let groupName = groupInfo.subject || "Grup";
 
-    // Cek status greeting
-    let isGreetingEnabled = await getGreetingStatus(id);
-    console.log(`🔍 Greeting status untuk grup ${groupName}: ${isGreetingEnabled}`);
+      // Cek status greeting
+      let isGreetingEnabled = await getGreetingStatus(id);
+      console.log(
+        `🔍 Greeting status untuk grup ${groupName}: ${isGreetingEnabled}`
+      );
 
-    if (!isGreetingEnabled) {
-      console.log(`⏳ Greeting dinonaktifkan untuk grup ${groupName}, abaikan...`);
-      return; // Jangan kirim pesan jika greeting dimatikan
-    }
-
-    for (let participant of participants) {
-      let eventKey = `${id}_${participant}_${action}`;
-
-      if (recentEvents.has(eventKey)) {
-        console.log(`⏳ Event ${eventKey} sudah diproses, abaikan...`);
-        continue;
+      if (!isGreetingEnabled) {
+        console.log(
+          `⏳ Greeting dinonaktifkan untuk grup ${groupName}, abaikan...`
+        );
+        return; // Jangan kirim pesan jika greeting dimatikan
       }
 
-      recentEvents.set(eventKey, Date.now());
-      setTimeout(() => recentEvents.delete(eventKey), 5000);
+      for (let participant of participants) {
+        let eventKey = `${id}_${participant}_${action}`;
 
-      console.log(`🔹 Memproses ${action} untuk ${participant} di ${groupName}`);
-
-      if (action === "add") {
-        let welcomeMessage = await getWelcomeMessage(id, participant, groupName);
-        console.log(`🔹 Pesan Selamat Datang: ${welcomeMessage}`);
-        if (welcomeMessage) {
-          sock.sendMessage(id, {
-            text: welcomeMessage,
-            mentions: [participant],
-          });
+        if (recentEvents.has(eventKey)) {
+          console.log(`⏳ Event ${eventKey} sudah diproses, abaikan...`);
+          continue;
         }
-      } else if (action === "remove") {
-        let leaveMessage = await getLeaveMessage(id, participant, groupName);
-        console.log(`🔹 Pesan Perpisahan: ${leaveMessage}`);
-        if (leaveMessage) {
-          sock.sendMessage(id, {
-            text: leaveMessage,
-            mentions: [participant],
-          });
+
+        recentEvents.set(eventKey, Date.now());
+        setTimeout(() => recentEvents.delete(eventKey), 5000);
+
+        console.log(
+          `🔹 Memproses ${action} untuk ${participant} di ${groupName}`
+        );
+
+        if (action === "add") {
+          let welcomeMessage = await getWelcomeMessage(
+            id,
+            participant,
+            groupName
+          );
+          console.log(`🔹 Pesan Selamat Datang: ${welcomeMessage}`);
+          if (welcomeMessage) {
+            sock.sendMessage(id, {
+              text: welcomeMessage,
+              mentions: [participant],
+            });
+          }
+        } else if (action === "remove") {
+          let leaveMessage = await getLeaveMessage(id, participant, groupName);
+          console.log(`🔹 Pesan Perpisahan: ${leaveMessage}`);
+          if (leaveMessage) {
+            sock.sendMessage(id, {
+              text: leaveMessage,
+              mentions: [participant],
+            });
+          }
         }
       }
+    } catch (err) {
+      console.error(`❌ Terjadi kesalahan: ${err.message}`);
     }
-  } catch (err) {
-    console.error(`❌ Terjadi kesalahan: ${err.message}`);
-  }
-});
-
+  });
 
   // Event handler untuk pesan masuk
   sock.ev.on("messages.upsert", async (m) => {
@@ -837,6 +846,80 @@ async function startBot() {
         console.error("❌ Error saat menjalankan hidetag:", error);
         sock.sendMessage(remoteJid, {
           text: "⚠️ Gagal mengirim pesan dengan hidetag. Pastikan bot adalah admin!",
+        });
+      }
+    } else if (textMessage.startsWith("!member ")) {
+      const isGroup = remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan dalam grup.",
+        });
+      }
+
+      const message = textMessage.slice(8).trim();
+      if (!message) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Harap masukkan pesan setelah perintah !member",
+        });
+      }
+
+      try {
+        const groupMetadata = await sock.groupMetadata(remoteJid);
+        const nonAdmins = groupMetadata.participants
+          .filter((member) => !member.admin)
+          .map((member) => member.id);
+
+        if (nonAdmins.length === 0) {
+          return sock.sendMessage(remoteJid, {
+            text: "✅ Semua anggota adalah admin!",
+          });
+        }
+
+        await sock.sendMessage(remoteJid, {
+          text: message,
+          mentions: nonAdmins,
+        });
+      } catch (error) {
+        console.error("❌ Error saat menjalankan !member:", error);
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Terjadi kesalahan. Pastikan bot adalah admin grup.",
+        });
+      }
+    } else if (textMessage.startsWith("!admin ")) {
+      const isGroup = remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Perintah ini hanya bisa digunakan dalam grup.",
+        });
+      }
+
+      const message = textMessage.slice(7).trim();
+      if (!message) {
+        return sock.sendMessage(remoteJid, {
+          text: "⚠️ Harap masukkan pesan setelah perintah !admin",
+        });
+      }
+
+      try {
+        const groupMetadata = await sock.groupMetadata(remoteJid);
+        const admins = groupMetadata.participants
+          .filter((member) => member.admin)
+          .map((member) => member.id);
+
+        if (admins.length === 0) {
+          return sock.sendMessage(remoteJid, {
+            text: "⚠️ Tidak ada admin dalam grup ini!",
+          });
+        }
+
+        await sock.sendMessage(remoteJid, {
+          text: message,
+          mentions: admins,
+        });
+      } catch (error) {
+        console.error("❌ Error saat menjalankan !admin:", error);
+        sock.sendMessage(remoteJid, {
+          text: "⚠️ Terjadi kesalahan. Pastikan bot adalah admin grup.",
         });
       }
     } else if (textMessage === "!refreshgroup") {
@@ -2017,7 +2100,6 @@ async function getLeaveMessage(groupId, participant, groupName) {
 
   return `Selamat tinggal, ${userMention}! Semoga sukses di tempat baru.`;
 }
-
 
 // Get status greeting
 async function getGreetingStatus(groupId) {

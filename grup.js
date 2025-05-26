@@ -3,7 +3,7 @@ const moment = require("moment");
 require("moment-hijri");
 require("moment-timezone");
 const fs = require("fs");
-const { isAdminOrAllowedUser } = require("utils/groupAuth");
+const { isAdminOrAllowedUser } = require("/./utils/groupAuth");
 /* AWAL */
 /* GRUP DAN ADMIN */
 /* ⏰ *PENGINGAT (REMINDER)*  

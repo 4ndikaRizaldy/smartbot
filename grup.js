@@ -3,6 +3,7 @@ const moment = require("moment");
 require("moment-hijri");
 require("moment-timezone");
 const fs = require("fs");
+const { isAdminOrAllowedUser } = require("../utils/groupAuth");
 /* AWAL */
 /* GRUP DAN ADMIN */
 /* ⏰ *PENGINGAT (REMINDER)*  
@@ -299,24 +300,15 @@ const mentionAll = async (from, sock, customMessage = "👥 Mention All!") => {
 };
 
 // PENGUMUMAN
+const { isAdminOrAllowedUser } = require("../utils/groupAuth");
+
 async function announceToAll(remoteJid, sender, sock, message) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);
     const participants = groupMetadata.participants.map((member) => member.id);
 
-    // Daftar nomor yang diizinkan walau bukan admin
-    const allowedUsers = ["6285253435963@s.whatsapp.net"];
-
-    // Daftar admin
-    const groupAdmins = groupMetadata.participants
-      .filter((member) => member.admin)
-      .map((admin) => admin.id);
-
-    const isAdmin = groupAdmins.includes(sender);
-    const isAllowedUser = allowedUsers.includes(sender);
-
-    // Cek hak akses
-    if (!isAdmin && !isAllowedUser) {
+    // Gunakan helper isAdminOrAllowedUser
+    if (!(await isAdminOrAllowedUser(remoteJid, sender, sock))) {
       return sock.sendMessage(remoteJid, {
         text: "⚠️ Kamu bukan admin grup!",
       });
@@ -332,6 +324,7 @@ async function announceToAll(remoteJid, sender, sock, message) {
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal mengirim pengumuman." });
   }
 }
+
 
 
 // Mapping zona waktu berdasarkan kode (WIB, WITA, WIT)
@@ -536,8 +529,8 @@ async function checkGroupSchedule(sock) {
 
 // Fungsi untuk menambahkan anggota ke grup
 async function addMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
-  // Cek apakah pengirim adalah admin
-  if (!(await isUserAdmin(remoteJid, sender, sock))) {
+  // Cek apakah pengirim adalah admin atau termasuk allowedUsers
+  if (!(await isAdminOrAllowedUser(remoteJid, sender, sock))) {
     await sock.sendMessage(remoteJid, {
       text: "⚠️ Hanya admin yang bisa menambahkan anggota!",
     });
@@ -569,9 +562,10 @@ async function addMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
 }
 
 // Fungsi untuk menghapus anggota dari grup
+
 async function removeMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
-  // Cek apakah pengirim adalah admin
-  if (!(await isUserAdmin(remoteJid, sender, sock))) {
+  // Cek apakah pengirim adalah admin atau termasuk allowedUsers
+  if (!(await isAdminOrAllowedUser(remoteJid, sender, sock))) {
     await sock.sendMessage(remoteJid, {
       text: "⚠️ Hanya admin yang bisa mengeluarkan anggota!",
     });
@@ -602,16 +596,13 @@ async function removeMultipleMembers(remoteJid, sender, sock, phoneNumbers) {
   }
 }
 
+
 // Promote dan Demote
 // Fungsi promote member
 async function promoteMember(remoteJid, sender, sock, mentionedJid) {
   try {
-    const groupMetadata = await sock.groupMetadata(remoteJid);
-    const groupAdmins = groupMetadata.participants
-      .filter((member) => member.admin)
-      .map((admin) => admin.id);
-
-    if (!groupAdmins.includes(sender)) {
+    // Cek apakah sender admin atau termasuk allowedUsers
+    if (!(await isAdminOrAllowedUser(remoteJid, sender, sock))) {
       return sock.sendMessage(remoteJid, {
         text: "⚠️ Kamu bukan admin grup!",
       });
@@ -635,15 +626,12 @@ async function promoteMember(remoteJid, sender, sock, mentionedJid) {
   }
 }
 
+
 // Fungsi demote member
 async function demoteMember(remoteJid, sender, sock, mentionedJid) {
   try {
-    const groupMetadata = await sock.groupMetadata(remoteJid);
-    const groupAdmins = groupMetadata.participants
-      .filter((member) => member.admin)
-      .map((admin) => admin.id);
-
-    if (!groupAdmins.includes(sender)) {
+    // Cek apakah sender admin atau termasuk allowedUsers
+    if (!(await isAdminOrAllowedUser(remoteJid, sender, sock))) {
       return sock.sendMessage(remoteJid, {
         text: "⚠️ Kamu bukan admin grup!",
       });
@@ -659,15 +647,14 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
 
     await sock.groupParticipantsUpdate(remoteJid, mentionedJid, "demote");
     sock.sendMessage(remoteJid, {
-      text: `✅ Berhasil demote ${mentionedJid.join(
-        ", "
-      )} menjadi anggota biasa.`,
+      text: `✅ Berhasil demote ${mentionedJid.join(", ")} menjadi anggota biasa.`,
     });
   } catch (error) {
     console.error("❌ Error demoting member:", error);
     sock.sendMessage(remoteJid, { text: "⚠️ Gagal demote member." });
   }
 }
+
 module.exports = {
   // Reminder features
   setReminder,

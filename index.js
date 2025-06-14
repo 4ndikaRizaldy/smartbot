@@ -539,10 +539,7 @@ async function startBot() {
       const phoneNumbers = textMessage.replace("!add ", "").trim().split(" ");
       await addMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage.startsWith("!kick ")) {
-      const phoneNumbers = textMessage
-        .replace("!kick ", "")
-        .trim()
-        .split(" ");
+      const phoneNumbers = textMessage.replace("!kick ", "").trim().split(" ");
       await removeMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage === "!kicknonadmin") {
       await kickNonAdmins(remoteJid, sender, sock);
@@ -1986,28 +1983,52 @@ function saveDatabase(db) {
 }
 
 // **Fungsi CRUD untuk pesan custom**
-async function handleCustomMessages(textMessage, remoteJid, sock) {
-  let db = loadDatabase();
+// Fungsi menangani pesan custom dengan CRUD
+async function handleCustomMessages(textMessage, remoteJid, sender, sock) {
+  const db = loadDatabase(); // asumsi file JSON, struktur: { perintah: balasan }
+  const allowedUsers = ["6285253435963@s.whatsapp.net"]; // hanya user ini yg bisa tambah/edit/hapus
 
-  // **Create: Tambah perintah custom**
-if (textMessage.startsWith("!addcmd ")) {
-  let [cmd, ...response] = textMessage.slice(8).trim().split(" ");
-  if (!cmd || response.length === 0) {
+  // Cek siapa yg boleh eksekusi
+  const isAllowed = allowedUsers.includes(sender);
+
+  // --- TAMBAH PERINTAH ---
+  if (textMessage.startsWith("!addcmd ")) {
+    if (!isAllowed) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu tidak diizinkan menambahkan perintah custom.",
+      });
+    }
+
+    let [cmd, ...response] = textMessage.slice(8).trim().split(" ");
+    if (!cmd || response.length === 0) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Format: !addcmd <perintah> <balasan>",
+      });
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(cmd)) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Nama perintah hanya boleh huruf, angka, dan underscore (_)",
+      });
+    }
+
+    const reply = response.join(" ");
+    if (reply.length > 1000) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Balasan terlalu panjang. Maksimal 1000 karakter.",
+      });
+    }
+
+    db[cmd] = reply;
+    saveDatabase(db);
     return sock.sendMessage(remoteJid, {
-      text: "⚠️ Format: !addcmd <perintah> <balasan>",
+      text: `✅ Perintah *${cmd}* berhasil ditambahkan!`,
     });
   }
-  db[cmd] = response.join(" ");
-  saveDatabase(db);
-  return sock.sendMessage(remoteJid, {
-    text: `✅ Perintah *${cmd}* berhasil ditambahkan!`,
-  });
-}
 
-
-  // **Read: Lihat semua perintah custom**
-  if (textMessage === "!list") {
-    let commands = Object.keys(db).join("\n");
+  // --- LIST SEMUA PERINTAH ---
+  if (textMessage === "!listcmd") {
+    const commands = Object.keys(db).join("\n");
     return sock.sendMessage(remoteJid, {
       text: `📜 *Daftar perintah custom:*\n${
         commands || "Belum ada perintah."
@@ -2015,14 +2036,21 @@ if (textMessage.startsWith("!addcmd ")) {
     });
   }
 
-  // **Update: Ubah balasan perintah**
+  // --- UPDATE BALASAN ---
   if (textMessage.startsWith("!update ")) {
-    let [cmd, ...response] = textMessage.slice(8).split(" ");
+    if (!isAllowed) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu tidak diizinkan mengubah perintah.",
+      });
+    }
+
+    let [cmd, ...response] = textMessage.slice(8).trim().split(" ");
     if (!db[cmd]) {
       return sock.sendMessage(remoteJid, {
         text: `⚠️ Perintah *${cmd}* tidak ditemukan!`,
       });
     }
+
     db[cmd] = response.join(" ");
     saveDatabase(db);
     return sock.sendMessage(remoteJid, {
@@ -2030,14 +2058,21 @@ if (textMessage.startsWith("!addcmd ")) {
     });
   }
 
-  // **Delete: Hapus perintah**
+  // --- DELETE PERINTAH ---
   if (textMessage.startsWith("!delete ")) {
-    let cmd = textMessage.split(" ")[1];
+    if (!isAllowed) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu tidak diizinkan menghapus perintah.",
+      });
+    }
+
+    const cmd = textMessage.split(" ")[1];
     if (!db[cmd]) {
       return sock.sendMessage(remoteJid, {
         text: `⚠️ Perintah *${cmd}* tidak ditemukan!`,
       });
     }
+
     delete db[cmd];
     saveDatabase(db);
     return sock.sendMessage(remoteJid, {
@@ -2045,9 +2080,24 @@ if (textMessage.startsWith("!addcmd ")) {
     });
   }
 
-  // **Balas jika perintah ada di database**
-  if (db[textMessage]) {
-    return sock.sendMessage(remoteJid, { text: db[textMessage] });
+  // --- HELP ---
+  if (textMessage === "!help cmd") {
+    return sock.sendMessage(remoteJid, {
+      text: `📘 *Panduan Custom Command:*
+• !addcmd <perintah> <balasan> – Tambah perintah custom
+• !listcmd – Lihat semua perintah
+• !update <perintah> <balasan baru> – Ubah balasan
+• !delete <perintah> – Hapus perintah
+• !help cmd – Bantuan ini
+
+🔁 Ketik *!<perintah>* untuk membalas otomatis.`,
+    });
+  }
+
+  // --- RESPON OTOMATIS JIKA COCOK ---
+  const cmd = textMessage.startsWith("!") ? textMessage.slice(1) : textMessage;
+  if (db[cmd]) {
+    return sock.sendMessage(remoteJid, { text: db[cmd] });
   }
 }
 

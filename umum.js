@@ -86,7 +86,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 🔹 *!cekjadwal* ➝ 📆 Memeriksa jadwal grup yang telah diset  
 🔹 *!hapusjadwal [buka/tutup]* ➝ ❌ Menghapus jadwal buka atau tutup grup  
 🔹 *!add [nomor telepon]* ➝ ➕ Menambahkan anggota baru ke grup  
-🔹 *!remove [nomor telepon]* ➝ ➖ Menghapus anggota dari grup  
+🔹 *!kick [nomor telepon]* ➝ ➖ Menghapus anggota dari grup  
 🔹 *!kicknonadmin* ➝ 🛑 Mengeluarkan anggota non-admin dari grup  
 🔹 *!promote [tag]* ➝ ⬆️ Mempromosikan anggota menjadi admin  
 🔹 *!demote [tag]* ➝ ⬇️ Menurunkan status admin anggota  

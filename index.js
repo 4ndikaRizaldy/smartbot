@@ -538,9 +538,9 @@ async function startBot() {
     } else if (textMessage.startsWith("!add ")) {
       const phoneNumbers = textMessage.replace("!add ", "").trim().split(" ");
       await addMultipleMembers(remoteJid, sender, sock, phoneNumbers);
-    } else if (textMessage.startsWith("!remove ")) {
+    } else if (textMessage.startsWith("!kick ")) {
       const phoneNumbers = textMessage
-        .replace("!remove ", "")
+        .replace("!kick ", "")
         .trim()
         .split(" ");
       await removeMultipleMembers(remoteJid, sender, sock, phoneNumbers);

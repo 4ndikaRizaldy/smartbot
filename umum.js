@@ -25,98 +25,108 @@ Hai! 🤖 Aku *SmartBot*, siap membantu dan menghibur kamu. Berikut daftar perin
 
 📌 *INFO & UTILITAS* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-🔹 *!menu* ➝ 📋 Menampilkan daftar perintah  
-  *Contoh:* \`!menu\`  
+🔹 *!fitur* ➝ 📋 Menampilkan daftar fitur  
 🔹 *!ping* ➝ 🏓 Mengecek apakah bot aktif  
-  *Contoh:* \`!ping\` → *Bot menjawab: "Pong! Bot aktif!"*  
+🔹 *!tagall [pesan]* ➝ 📢 Menyebut semua anggota grup dengan pesan  
 🔹 *!jumlahanggota* ➝ 👥 Menampilkan jumlah anggota grup  
-  *Contoh:* \`!jumlahanggota\`  
+🔹 *!tanggal* ➝ 📅 Mengirimkan tanggal saat ini  
+🔹 *!faktaunik* ➝ 💡 Mengirimkan fakta unik secara acak  
+🔹 *!motivasi* ➝ 🌟 Mengirimkan kutipan motivasi  
+🔹 *!qrcode [teks/URL]* ➝ 📷 Membuat QR code dari teks atau URL  
 🔹 *!shortlink [URL]* ➝ 🔗 Memperpendek link  
-  *Contoh:* \`!shortlink https://www.example.com\`  
-🔹 *!qrcode [teks]* ➝ 📷 Membuat Barcode  
-  *Contoh:* \`!qrcode SmartBot\`  
-
-👥 *MANAJEMEN DIVISI* (Admin)  
-━━━━━━━━━━━━━━━━━━  
-📢 *Tag Divisi* ➝ *!tagdivisi [nama_divisi]*  
-📜 *Daftar Divisi* ➝ *!listdivisi*  
-➕ *Tambah User ke Divisi* ➝ *!setdivisi @user [nama_divisi]*  
-❌ *Hapus User dari Divisi* ➝ *!removedivisi @user [nama_divisi]*  
-🏢 *Tambah Divisi Baru* ➝ *!adddivisi [nama_divisi]*  
+🔹 *!wiki [query]* ➝ 🌍 Mencari informasi di Wikipedia  
+🔹 *!bing [query]* ➝ 🌐 Mencari informasi menggunakan Bing  
+🔹 *!hitung [ekspresi]* ➝ 🧮 Menghitung hasil dari ekspresi matematika  
+🔹 *!translate [teks]* ➝ 🔄 Menerjemahkan teks ke bahasa yang diinginkan  
 
 🎮 *PERMAINAN & TEBAK-TEBAKAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-🎲 *Tebak Angka* ➝ *!tebakangka*  
-🧠 *Tebak Logika* ➝ *!tebaklogika*  
-🔠 *Acak Huruf* ➝ *!acakhuruf*  
-⚔️ *1vs1 Acak Huruf* ➝ *!tantang @username*  
-🔥 *Survival Mode* ➝ *!survival*  
-🏆 *Leaderboard* ➝ *!leaderboard*  
-🎖 *Rank & Hadiah Virtual* ➝ *!rank*  
+🔹 *!tebaklogika* ➝ 🧠 Memulai permainan tebak logika  
+🔹 *!jlogika [jawaban]* ➝ 💭 Memeriksa jawaban untuk permainan tebak logika  
+🔹 *!kluelogika* ➝ 🧩 Memberikan petunjuk untuk permainan tebak logika  
+🔹 *!tebakangka* ➝ 🎲 Memulai permainan tebak angka  
+🔹 *!jangka [tebakan]* ➝ 🔢 Memeriksa tebakan angka  
+🔹 *!acakhuruf* ➝ 🔠 Memulai permainan acak huruf  
+🔹 *!survival* ➝ 🔥 Memulai permainan survival  
+🔹 *!jhuruf [jawaban]* ➝ 🔤 Memeriksa jawaban untuk permainan huruf  
+🔹 *!leaderboard* ➝ 🏆 Menampilkan papan peringkat pemain  
+🔹 *!rank* ➝ 🎖 Menampilkan peringkat pengguna  
+🔹 *!tantang [nomor telepon]* ➝ ⚔️ Menantang pemain lain untuk bertanding  
 
-📚 *INFO & PENGETAHUAN* (Umum)  
+📚 *PENGETAHUAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-📅 *Tanggal* ➝ *!tanggal*  
-💡 *Fakta Unik* ➝ *!faktaunik*  
-📖 *Quran* ➝ *!quran [surat:ayat]*  
-🌍 *Wikipedia* ➝ *!wiki [pertanyaan]*  
-🔍 *Pencarian Bing* ➝ *!bing [pertanyaan]*  
-📜 *Pantun* ➝ *!pantun*  
-🌟 *Motivasi* ➝ *!motivasi*  
-
-🔢 *MATEMATIKA* (Umum)  
-━━━━━━━━━━━━━━━━━━  
-🧮 *Kalkulator* ➝ *!hitung [ekspresi]*  
-
-🌍 *BAHASA & TERJEMAHAN* (Umum)  
-━━━━━━━━━━━━━━━━━━  
-🔄 *Terjemahan* ➝ *!translate [kode bahasa] [teks]*  
-🌏 *Kode Bahasa* ➝ *!kodenegara*  
+🔹 *!quran [ayat]* ➝ 📖 Mengambil ayat dari Al-Quran  
+🔹 *!pantun* ➝ 📜 Mengirimkan pantun secara acak  
 
 ⏰ *PENGINGAT (REMINDER)* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-📅 *Setel Pengingat* ➝ *!setremind [waktu] [pesan]*  
-📜 *Lihat Pengingat* ➝ *!listremind*  
-🔁 *Pengingat Berulang* ➝ *!repeatremind [waktu] [pesan]*  
+🔹 *!remind [teks]* ➝ 📅 Mengatur pengingat  
+🔹 *!setremind [teks]* ➝ 🏷️ Mengatur pengingat dengan format tertentu  
+🔹 *!gremind [teks]* ➝ 📅 Mengatur pengingat grup  
+🔹 *!setgremind [teks]* ➝ 🏷️ Mengatur pengingat grup dengan format tertentu  
+🔹 *!listremind* ➝ 📜 Menampilkan daftar pengingat yang telah diset  
+🔹 *!cancelremind [id]* ➝ ❌ Membatalkan pengingat tertentu  
+🔹 *!repeatremind [teks]* ➝ 🔁 Mengatur pengingat berulang  
+🔹 *!repeatgremind [teks]* ➝ 🔁 Mengatur pengingat grup berulang  
+🔹 *!stopremind [id]* ➝ ⛔ Menghentikan pengingat berulang tertentu  
 
-📚 *MANAJEMEN GURU & AUTO-RESPONSE* (Admin)  
+👥 *MANAJEMEN GRUP & ADMIN* (Admin)  
 ━━━━━━━━━━━━━━━━━━  
-👨‍🏫 *Tambah Guru* ➝ *!tambahguru [nomor]*  
-📜 *Daftar Guru* ➝ *!listguru*  
-❌ *Hapus Guru* ➝ *!hapusguru [nomor]*  
-🤖 *Ajarkan Bot* ➝ *!ajarin [pertanyaan] = [jawaban]*  
-📖 *Lihat Auto-Response* ➝ *!listajarin [halaman]*  
-🗑 *Hapus Auto-Response* ➝ *!hapusajarin [pertanyaan]*  
-
-👥 *GRUP & ADMIN* (Admin)  
-━━━━━━━━━━━━━━━━━━  
-📢 *Tag Semua* ➝ *!tagall [pesan opsional]*  
-🔓 *Buka/Tutup Grup* ➝ *!bukagrup* | *!tutupgrup*  
-➕ *Tambah Anggota* ➝ *!add [nomor]*  
-🚪 *Keluarkan Anggota* ➝ *!remove [nomor]*  
-
-💬 *Greeting Management*  
-━━━━━━━━━━━━━━━━━━  
-✍️ *Set Welcome Message* ➝ *!setwelcome [pesan]*  
-  *Contoh:* \`!setwelcome Selamat datang di @group, @user!\`  
-❌ *Clear Welcome Message* ➝ *!clearwelcome*  
-📥 *Get Welcome Message* ➝ *!getwelcome*  
-✍️ *Set Leave Message* ➝ *!setleave [pesan]*  
-  *Contoh:* \`!setleave Selamat jalan, @user!\`  
-❌ *Clear Leave Message* ➝ *!clearleave*  
-📤 *Get Leave Message* ➝ *!getleave*  
-✅ *Aktifkan Greeting* ➝ *!greeting on*  
-❌ *Nonaktifkan Greeting* ➝ *!greeting off*  
+🔹 *!setwelcome [pesan]* ➝ ✍️ Mengatur pesan sambutan untuk anggota baru  
+🔹 *!setleave [pesan]* ➝ ✍️ Mengatur pesan perpisahan untuk anggota yang keluar  
+🔹 *!getwelcome* ➝ 📥 Mengambil pesan sambutan yang telah diatur  
+🔹 *!getleave* ➝ 📥 Mengambil pesan perpisahan yang telah diatur  
+🔹 *!clearwelcome* ➝ ❌ Menghapus pesan sambutan  
+🔹 *!clearleave* ➝ ❌ Menghapus pesan perpisahan  
+🔹 *!greeting on/off* ➝ 🔄 Mengaktifkan atau menonaktifkan pesan sambutan otomatis  
+🔹 *!bukagrup* ➝ 🔓 Membuka grup untuk anggota baru  
+🔹 *!tutupgrup* ➝ 🔒 Menutup grup dari anggota baru  
+🔹 *!jadwalbuka [HH:MM WIB/WITA/WIT]* ➝ ⏰ Menetapkan jadwal buka grup  
+🔹 *!jadwaltutup [HH:MM WIB/WITA/WIT]* ➝ ⏰ Menetapkan jadwal tutup grup  
+🔹 *!cekjadwal* ➝ 📆 Memeriksa jadwal grup yang telah diset  
+🔹 *!hapusjadwal [buka/tutup]* ➝ ❌ Menghapus jadwal buka atau tutup grup  
+🔹 *!add [nomor telepon]* ➝ ➕ Menambahkan anggota baru ke grup  
+🔹 *!remove [nomor telepon]* ➝ ➖ Menghapus anggota dari grup  
+🔹 *!kicknonadmin* ➝ 🛑 Mengeluarkan anggota non-admin dari grup  
+🔹 *!promote [tag]* ➝ ⬆️ Mempromosikan anggota menjadi admin  
+🔹 *!demote [tag]* ➝ ⬇️ Menurunkan status admin anggota  
+🔹 *!announce [pesan]* ➝ 📢 Mengumumkan pesan kepada semua anggota grup  
 
 📩 *SARAN & MASUKAN* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-✍️ *Kirim Kritik* ➝ *!kritik [pesan]*  
+🔹 *!kritik [pesan]* ➝ ✍️ Mengirimkan kritik atau saran  
+🔹 *!lihatkritik* ➝ 📜 Melihat kritik atau saran yang telah diajukan  
+
+📊 *VOTING & POLLING* (Umum)  
+━━━━━━━━━━━━━━━━━━  
+🔹 *!vote [opsi]* ➝ 🗳 Memulai voting  
+🔹 *!poll [pertanyaan]* ➝ 📊 Membuat polling  
+
+📚 *MANAJEMEN GURU & AUTO-RESPONSE* (Admin)  
+━━━━━━━━━━━━━━━━━━  
+🔹 *!listajarin [halaman]* ➝ 📖 Menampilkan daftar respons yang telah dipelajari  
+🔹 *!hapusajarin [id]* ➝ 🗑 Menghapus respons yang telah dipelajari  
+
+💬 *GRUP & ADMIN* (Admin)  
+━━━━━━━━━━━━━━━━━━  
+🔹 *!setnamegc [nama baru]* ➝ ✏️ Mengubah nama grup  
+🔹 *!setdescgc [deskripsi baru]* ➝ ✏️ Mengubah deskripsi grup  
+🔹 *!groupinfo* ➝ ℹ️ Menampilkan informasi grup  
+🔹 *!hidetag [pesan]* ➝ 📢 Mengirim pesan tanpa menyebut nama  
+🔹 *!member [pesan]* ➝ 📩 Mengirim pesan ke semua anggota non-admin  
+🔹 *!admin [pesan]* ➝ 📩 Mengirim pesan ke semua admin grup  
+🔹 *!refreshgroup* ➝ 🔄 Memperbarui informasi grup  
 
 🎲 *FITUR SERU* (Umum)  
 ━━━━━━━━━━━━━━━━━━  
-🎲 *Roll Dadu* ➝ *!roll*  
-😂 *Lelucon* ➝ *!joke*  
-⏳ *Countdown Event* ➝ *!countdown [tanggal] [jam]*  
+🔹 *!roll* ➝ 🎲 Menggulung dadu  
+🔹 *!fact* ➝ 💡 Mengambil fakta acak  
+🔹 *!joke* ➝ 😂 Mengambil lelucon acak  
+🔹 *!countdown [tanggal acara]* ➝ ⏳ Menghitung mundur hingga tanggal acara tertentu  
+🔹 *!setrole "No" "Role"* ➝ 🎭 Memberikan role  
+🔹 *!tag "role"* ➝ 📣 Mention sesuai role  
+🔹 *!roles* ➝ 📋 Melihat daftar role  
+🔹 *!delroles* ➝ ❌ Menghapus role  
 
 💬 *Coba sekarang!* Kirim salah satu perintah di atas dan nikmati fiturnya! 🚀
 `;

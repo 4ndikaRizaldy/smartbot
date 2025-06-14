@@ -197,15 +197,15 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ *!ajarin [text]* – 📖 Mengajarkan SmartBot  
 ➤ *!listajarin* – 📜 Melihat hal yang diajarkan  
 
-!addcmd [perintah] [balasan]
-!listcmd
-!deletecmd [perintah]
-!updatecmd [perintah lama] [perintah baru]
-
+🛠️ *PERINTAH ADMINISTRASI*  
+━━━━━━━━━━━━━━━━━━  
+➤ *!addcmd [perintah] | [balasan]* – ➕ Menambahkan perintah baru beserta balasan  
+➤ *!listcmd* – 📋 Melihat daftar perintah yang ada  
+➤ *!deletecmd [perintah]* – ❌ Menghapus perintah yang ditentukan  
+➤ *!updatecmd [perintah lama] [perintah baru]* – 🔄 Memperbarui perintah yang ada  
 
 🔹 *Gunakan perintah di atas untuk menikmati fitur SmartBot!* 🚀`,
   },
-
 
   {
     keyword: "!kodenegara",

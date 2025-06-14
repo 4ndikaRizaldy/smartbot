@@ -72,7 +72,6 @@ const {
   demoteMember,
   kickNonAdmins,
   setRoleCommand,
-  
 } = require("./grup");
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
@@ -544,18 +543,8 @@ async function startBot() {
       await removeMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage === "!kicknonadmin") {
       await kickNonAdmins(remoteJid, sender, sock);
-    } else if (command === "!setrole") {
-      const roleName = args[0];
-      const mentionedJid =
-        message.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
-
-      if (!roleName || mentionedJid.length === 0) {
-        return sock.sendMessage(remoteJid, {
-          text: "❗ Format: !setrole [peran] @tag",
-        });
-      }
-
-      await setRoleCommand(sock, remoteJid, sender, mentionedJid, roleName);
+    } else if (body.startsWith("!setrole")) {
+      await setRoleCommand(sock, remoteJid, sender, body);
     } else if (textMessage.startsWith("!promote ")) {
       const mentionedJid =
         msg.message.extendedTextMessage?.contextInfo?.mentionedJid;

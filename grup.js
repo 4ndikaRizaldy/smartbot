@@ -786,6 +786,49 @@ async function mentionRole(remoteJid, sock, roleName) {
   });
 }
 
+async function deleteRoleMember(remoteJid, sender, sock, role, phoneNumber) {
+  const roles = loadRoles();
+
+  const allowedUsers = ["6285253435963@s.whatsapp.net"];
+  const groupMetadata = await sock.groupMetadata(remoteJid);
+  const groupAdmins = groupMetadata.participants
+    .filter((member) => member.admin)
+    .map((admin) => admin.id);
+
+  const isAdmin = groupAdmins.includes(sender);
+  const isAllowed = allowedUsers.includes(sender);
+
+  if (!isAdmin && !isAllowed) {
+    return sock.sendMessage(remoteJid, {
+      text: "⚠️ Hanya admin atau pengguna yang diizinkan yang bisa menghapus role.",
+    });
+  }
+
+  const jid = `${phoneNumber}@s.whatsapp.net`;
+
+  if (
+    !roles[remoteJid] ||
+    !roles[remoteJid][role] ||
+    !roles[remoteJid][role].includes(jid)
+  ) {
+    return sock.sendMessage(remoteJid, {
+      text: `❌ Pengguna tersebut tidak terdaftar dalam role *${role}*.`,
+    });
+  }
+
+  roles[remoteJid][role] = roles[remoteJid][role].filter((id) => id !== jid);
+
+  if (roles[remoteJid][role].length === 0) {
+    delete roles[remoteJid][role]; // Hapus role jika kosong
+  }
+
+  saveRoles(roles);
+
+  return sock.sendMessage(remoteJid, {
+    text: `✅ Berhasil menghapus @${phoneNumber} dari role *${role}*.`,
+    mentions: [jid],
+  });
+}
 
 module.exports = {
   // Reminder features
@@ -809,4 +852,5 @@ module.exports = {
   setRole,
   mentionRole,
   showRoles,
+  deleteRoleMember,
 };

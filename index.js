@@ -74,6 +74,7 @@ const {
   setRole,
   mentionRole,
   showRoles,
+  deleteRoleMember,
 } = require("./grup");
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
@@ -554,6 +555,18 @@ async function startBot() {
       await mentionRole(remoteJid, sock, roleName);
     } else if (textMessage === "!roles") {
       await showRoles(remoteJid, sock);
+    } else if (textMessage.startsWith("!delrole")) {
+      const args = textMessage.split(" ");
+      if (args.length < 3) {
+        return sock.sendMessage(remoteJid, {
+          text: "❗ Format: `!delrole [role] [nomor]`\nContoh: `!delrole desain 6281234567890`",
+        });
+      }
+
+      const role = args[1];
+      const number = args[2].replace(/[^0-9]/g, ""); // bersihkan format nomor
+
+      await deleteRoleMember(remoteJid, sender, sock, role, number);
     } else if (textMessage.startsWith("!promote ")) {
       const mentionedJid =
         msg.message.extendedTextMessage?.contextInfo?.mentionedJid;

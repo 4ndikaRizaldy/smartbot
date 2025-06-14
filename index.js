@@ -539,10 +539,7 @@ async function startBot() {
       const phoneNumbers = textMessage.replace("!add ", "").trim().split(" ");
       await addMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage.startsWith("!kick ")) {
-      const phoneNumbers = textMessage
-        .replace("!kick ", "")
-        .trim()
-        .split(" ");
+      const phoneNumbers = textMessage.replace("!kick ", "").trim().split(" ");
       await removeMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage === "!kicknonadmin") {
       await kickNonAdmins(remoteJid, sender, sock);
@@ -1990,34 +1987,35 @@ async function handleCustomMessages(textMessage, remoteJid, sock) {
   let db = loadDatabase();
 
   // **Create: Tambah perintah custom**
-if (textMessage.startsWith("!addcmd ")) {
-  let [cmd, ...response] = textMessage.slice(8).trim().split(" ");
-  if (!cmd || response.length === 0) {
+  if (textMessage.startsWith("!addcmd ")) {
+    let input = textMessage.slice(8).trim();
+    let [cmd, response] = input.split("|").map((part) => part.trim());
+
+    if (!cmd || !response) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Format: !addcmd <perintah> | <balasan>",
+      });
+    }
+
+    db[cmd.toLowerCase()] = response;
+    saveDatabase(db);
     return sock.sendMessage(remoteJid, {
-      text: "⚠️ Format: !addcmd <perintah> <balasan>",
+      text: `✅ Perintah *${cmd}* berhasil ditambahkan!`,
     });
   }
-  db[cmd] = response.join(" ");
-  saveDatabase(db);
-  return sock.sendMessage(remoteJid, {
-    text: `✅ Perintah *${cmd}* berhasil ditambahkan!`,
-  });
-}
-
 
   // **Read: Lihat semua perintah custom**
   if (textMessage === "!listcmd") {
-  let commands = Object.keys(db).join("\n");
-  return sock.sendMessage(remoteJid, {
-    text: `📜 *Daftar perintah custom:*\n${
-      commands || "Belum ada perintah."
-    }`,
-  });
-}
-
+    let commands = Object.keys(db).join("\n");
+    return sock.sendMessage(remoteJid, {
+      text: `📜 *Daftar perintah custom:*\n${
+        commands || "Belum ada perintah."
+      }`,
+    });
+  }
 
   // **Update: Ubah balasan perintah**
-  if (textMessage.startsWith("!update ")) {
+  if (textMessage.startsWith("!updatecmd ")) {
     let [cmd, ...response] = textMessage.slice(8).split(" ");
     if (!db[cmd]) {
       return sock.sendMessage(remoteJid, {
@@ -2032,7 +2030,7 @@ if (textMessage.startsWith("!addcmd ")) {
   }
 
   // **Delete: Hapus perintah**
-  if (textMessage.startsWith("!delete ")) {
+  if (textMessage.startsWith("!deletecmd ")) {
     let cmd = textMessage.split(" ")[1];
     if (!db[cmd]) {
       return sock.sendMessage(remoteJid, {
@@ -2047,8 +2045,8 @@ if (textMessage.startsWith("!addcmd ")) {
   }
 
   // **Balas jika perintah ada di database**
-  if (db[textMessage]) {
-    return sock.sendMessage(remoteJid, { text: db[textMessage] });
+  if (db[textMessage.toLowerCase()]) {
+    return sock.sendMessage(remoteJid, { text: db[textMessage.toLowerCase()] });
   }
 }
 

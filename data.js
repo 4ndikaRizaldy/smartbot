@@ -140,7 +140,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ *!cekjadwal* – 📆 Memeriksa jadwal grup yang telah diset  
 ➤ *!hapusjadwal [buka/tutup]* – ❌ Menghapus jadwal buka atau tutup grup  
 ➤ *!add [nomor telepon]* – ➕ Menambahkan anggota baru ke grup  
-➤ *!remove [nomor telepon]* – ➖ Menghapus anggota dari grup  
+➤ *!kick [nomor telepon]* – ➖ Menghapus anggota dari grup  
 ➤ *!kicknonadmin* – 🛑 Mengeluarkan anggota non-admin dari grup  
 ➤ *!promote [tag]* – ⬆️ Mempromosikan anggota menjadi admin  
 ➤ *!demote [tag]* – ⬇️ Menurunkan status admin anggota  
@@ -196,6 +196,12 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ *!hapusguru [nomor]* – ❌ Menghapus guru  
 ➤ *!ajarin [text]* – 📖 Mengajarkan SmartBot  
 ➤ *!listajarin* – 📜 Melihat hal yang diajarkan  
+
+!addcmd [perintah] [balasan]
+!listcmd
+!deletecmd [perintah]
+!updatecmd [perintah lama] [perintah baru]
+
 
 🔹 *Gunakan perintah di atas untuk menikmati fitur SmartBot!* 🚀`,
   },

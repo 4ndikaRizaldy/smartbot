@@ -74,7 +74,7 @@ const autoResponses = [
     response: "Aku siap membantu! Mau lihat fiturku? Coba ketik *!menu* 🤖",
   },
   {
-    keyword: "!menu",
+    keyword: "!fitur",
     response: `✨ *SMARTBOT MENU* ✨  
 Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:  
 
@@ -133,8 +133,6 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ *!clearwelcome* – ❌ Menghapus pesan sambutan  
 ➤ *!clearleave* – ❌ Menghapus pesan perpisahan  
 ➤ *!greeting on/off* – 🔄 Mengaktifkan atau menonaktifkan pesan sambutan otomatis  
-➤ *!listajarin [halaman]* – 📖 Menampilkan daftar respons yang telah dipelajari  
-➤ *!hapusajarin [id]* – 🗑 Menghapus respons yang telah dipelajari  
 ➤ *!bukagrup* – 🔓 Membuka grup untuk anggota baru  
 ➤ *!tutupgrup* – 🔒 Menutup grup dari anggota baru  
 ➤ *!jadwalbuka [HH:MM WIB/WITA/WIT]* – ⏰ Menetapkan jadwal buka grup  
@@ -142,7 +140,7 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ *!cekjadwal* – 📆 Memeriksa jadwal grup yang telah diset  
 ➤ *!hapusjadwal [buka/tutup]* – ❌ Menghapus jadwal buka atau tutup grup  
 ➤ *!add [nomor telepon]* – ➕ Menambahkan anggota baru ke grup  
-➤ *!kick [nomor telepon]* – ➖ Menghapus anggota dari grup  
+➤ *!remove [nomor telepon]* – ➖ Menghapus anggota dari grup  
 ➤ *!kicknonadmin* – 🛑 Mengeluarkan anggota non-admin dari grup  
 ➤ *!promote [tag]* – ⬆️ Mempromosikan anggota menjadi admin  
 ➤ *!demote [tag]* – ⬇️ Menurunkan status admin anggota  
@@ -167,6 +165,8 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ━━━━━━━━━━━━━━━━━━  
 ➤ *!vote [opsi]* – 🗳 Memulai voting  
 ➤ *!poll [pertanyaan]* – 📊 Membuat polling  
+➤ *!vote mulai* – 📊 Memulai voting  
+➤ *!poll mulai* – 📊 Memulai polling  
 
 📄 *GRUP & INFO*  
 ━━━━━━━━━━━━━━━━━━  
@@ -188,6 +188,14 @@ Hai! 🤖 Aku *SmartBot*, siap membantu kamu! Berikut fitur yang tersedia:
 ➤ *!tag "role"* – 📣 Mention sesuai role  
 ➤ *!roles* – 📋 Melihat daftar role  
 ➤ *!delroles* – ❌ Menghapus role  
+
+🎓 *FITUR GURU*  
+━━━━━━━━━━━━━━━━━━  
+➤ *!tambahguru [nomor]* – 🎓 Menambahkan guru  
+➤ *!listguru* – 📚 Melihat data guru  
+➤ *!hapusguru [nomor]* – ❌ Menghapus guru  
+➤ *!ajarin [text]* – 📖 Mengajarkan SmartBot  
+➤ *!listajarin* – 📜 Melihat hal yang diajarkan  
 
 🔹 *Gunakan perintah di atas untuk menikmati fitur SmartBot!* 🚀`,
   },

@@ -253,7 +253,7 @@ async function startBot() {
     await handleTeacherCommands(textMessage, remoteJid, sender, sock);
 
     // Penanganan perintah umum dan utilitas
-    if (textMessage === "!fitur") {
+    if (textMessage === "!menu") {
       const isAdmin = false; // Atur isAdmin (bisa cek dari grup)
       showMenu(remoteJid, isAdmin, sock);
     } else if (textMessage === "!ping") {
@@ -1989,20 +1989,21 @@ function saveDatabase(db) {
 async function handleCustomMessages(textMessage, remoteJid, sock) {
   let db = loadDatabase();
 
-  // **Create: Tambah perintah baru**
-  if (textMessage.startsWith("!addp ")) {
-    let [cmd, ...response] = textMessage.slice(5).split(" ");
-    if (!cmd || response.length === 0) {
-      return sock.sendMessage(remoteJid, {
-        text: "⚠️ Format: !add <perintah> <balasan>",
-      });
-    }
-    db[cmd] = response.join(" ");
-    saveDatabase(db);
+  // **Create: Tambah perintah custom**
+if (textMessage.startsWith("!addcmd ")) {
+  let [cmd, ...response] = textMessage.slice(8).trim().split(" ");
+  if (!cmd || response.length === 0) {
     return sock.sendMessage(remoteJid, {
-      text: `✅ Perintah *${cmd}* ditambahkan!`,
+      text: "⚠️ Format: !addcmd <perintah> <balasan>",
     });
   }
+  db[cmd] = response.join(" ");
+  saveDatabase(db);
+  return sock.sendMessage(remoteJid, {
+    text: `✅ Perintah *${cmd}* berhasil ditambahkan!`,
+  });
+}
+
 
   // **Read: Lihat semua perintah custom**
   if (textMessage === "!list") {

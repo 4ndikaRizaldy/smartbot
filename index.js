@@ -543,7 +543,7 @@ async function startBot() {
       await removeMultipleMembers(remoteJid, sender, sock, phoneNumbers);
     } else if (textMessage === "!kicknonadmin") {
       await kickNonAdmins(remoteJid, sender, sock);
-    } else if (body.startsWith("!setrole")) {
+    } else if (textMessage.startsWith("!setrole")) {
       await setRoleCommand(sock, remoteJid, sender, body);
     } else if (textMessage.startsWith("!promote ")) {
       const mentionedJid =

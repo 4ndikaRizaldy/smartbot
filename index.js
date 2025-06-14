@@ -73,6 +73,7 @@ const {
   kickNonAdmins,
   setRole,
   mentionRole,
+  showRoles,
 } = require("./grup");
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
@@ -551,6 +552,8 @@ async function startBot() {
     } else if (textMessage.startsWith("!tag")) {
       const [_, roleName] = textMessage.split(" ");
       await mentionRole(remoteJid, sock, roleName);
+    } else if (textMessage === "!roles") {
+      await showRoles(remoteJid, sock);
     } else if (textMessage.startsWith("!promote ")) {
       const mentionedJid =
         msg.message.extendedTextMessage?.contextInfo?.mentionedJid;

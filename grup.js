@@ -746,6 +746,31 @@ async function setRole(remoteJid, sender, sock, targetJid, roleName) {
   }
 }
 
+async function showRoles(remoteJid, sock) {
+  const data = loadRoles();
+
+  if (!data[remoteJid] || Object.keys(data[remoteJid]).length === 0) {
+    return sock.sendMessage(remoteJid, {
+      text: "📭 Belum ada role yang ditentukan di grup ini.",
+    });
+  }
+
+  let replyText = "📌 *Daftar Role di Grup Ini:*\n\n";
+
+  for (const [role, members] of Object.entries(data[remoteJid])) {
+    const formatted = members.map((m) => "• @" + m.split("@")[0]).join("\n");
+    replyText += `🔹 *${role}*:\n${formatted}\n\n`;
+  }
+
+  const allMentions = Object.values(data[remoteJid]).flat();
+
+  await sock.sendMessage(remoteJid, {
+    text: replyText.trim(),
+    mentions: allMentions,
+  });
+}
+
+
 async function mentionRole(remoteJid, sock, roleName) {
   const data = loadRoles();
   if (!data[remoteJid] || !data[remoteJid][roleName]) {
@@ -783,4 +808,5 @@ module.exports = {
   kickNonAdmins,
   setRole,
   mentionRole,
+  showRoles,
 };

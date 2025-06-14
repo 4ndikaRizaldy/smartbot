@@ -70,6 +70,7 @@ const {
   removeMultipleMembers,
   promoteMember,
   demoteMember,
+  kickNonAdmins,
 } = require("./grup");
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
@@ -539,6 +540,8 @@ async function startBot() {
         .trim()
         .split(" ");
       await removeMultipleMembers(remoteJid, sender, sock, phoneNumbers);
+    } else if (textMessage === "!kicknonadmin") {
+      await kickNonAdmins(remoteJid, sender, sock);
     } else if (textMessage.startsWith("!promote ")) {
       const mentionedJid =
         msg.message.extendedTextMessage?.contextInfo?.mentionedJid;

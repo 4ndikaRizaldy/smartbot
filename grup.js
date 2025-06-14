@@ -653,6 +653,62 @@ async function demoteMember(remoteJid, sender, sock, mentionedJid) {
   }
 }
 
+const allowedUsers = ["6285253435963@s.whatsapp.net"];
+const BOT_JID = "6285956000668@s.whatsapp.net"; // isi dengan nomor bot kamu
+
+async function kickNonAdmins(remoteJid, sender, sock) {
+  try {
+    const groupMetadata = await sock.groupMetadata(remoteJid);
+
+    const participants = groupMetadata.participants;
+    const groupAdmins = participants
+      .filter((p) => p.admin)
+      .map((p) => p.id);
+
+    const isAdmin = groupAdmins.includes(sender);
+    const isAllowed = allowedUsers.includes(sender);
+
+    // Hanya admin atau allowed user yang boleh pakai
+    if (!isAdmin && !isAllowed) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Kamu tidak punya izin untuk menjalankan perintah ini.",
+      });
+    }
+
+    // Pastikan bot adalah admin
+    const botIsAdmin = await isBotAdmin(remoteJid, sock);
+    if (!botIsAdmin) {
+      return sock.sendMessage(remoteJid, {
+        text: "⚠️ Bot harus jadi admin untuk mengeluarkan anggota.",
+      });
+    }
+
+    // Ambil semua member yang bukan admin dan bukan bot
+    const toKick = participants
+      .filter((p) => !p.admin && p.id !== BOT_JID)
+      .map((p) => p.id);
+
+    if (toKick.length === 0) {
+      return sock.sendMessage(remoteJid, {
+        text: "✅ Tidak ada anggota biasa yang perlu dikeluarkan.",
+      });
+    }
+
+    // Eksekusi kick
+    await sock.groupParticipantsUpdate(remoteJid, toKick, "remove");
+
+    await sock.sendMessage(remoteJid, {
+      text: `❌ Berhasil mengeluarkan ${toKick.length} anggota non-admin.`,
+    });
+  } catch (error) {
+    console.error("❌ Error saat mengeluarkan non-admin:", error);
+    await sock.sendMessage(remoteJid, {
+      text: "⚠️ Gagal mengeluarkan anggota.",
+    });
+  }
+}
+
+
 module.exports = {
   // Reminder features
   setReminder,
@@ -671,4 +727,5 @@ module.exports = {
   removeMultipleMembers,
   promoteMember,
   demoteMember,
+  kickNonAdmins,
 };

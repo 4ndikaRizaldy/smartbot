@@ -71,6 +71,8 @@ const {
   promoteMember,
   demoteMember,
   kickNonAdmins,
+  setRoleCommand,
+  
 } = require("./grup");
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");

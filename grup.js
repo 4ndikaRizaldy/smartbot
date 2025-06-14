@@ -708,6 +708,41 @@ async function kickNonAdmins(remoteJid, sender, sock) {
   }
 }
 
+const path = "./roles.json";
+
+function loadRoles() {
+  if (!fs.existsSync(path)) return {};
+  return JSON.parse(fs.readFileSync(path));
+}
+
+function saveRoles(data) {
+  fs.writeFileSync(path, JSON.stringify(data, null, 2));
+}
+async function setRoleCommand(sock, remoteJid, sender, mentionedJid, roleName) {
+  if (!mentionedJid || mentionedJid.length === 0) {
+    return sock.sendMessage(remoteJid, {
+      text: "⚠️ Kamu harus menandai (mention) minimal satu anggota.",
+    });
+  }
+
+  const roles = loadRoles();
+  const role = roleName.toLowerCase();
+
+  mentionedJid.forEach((jid) => {
+    roles[jid] = role;
+  });
+
+  saveRoles(roles);
+
+  const tagList = mentionedJid.map(jid => `@${jid.split("@")[0]}`).join(" ");
+
+  await sock.sendMessage(remoteJid, {
+    text: `✅ Peran *${role}* berhasil diberikan kepada:\n${tagList}`,
+    mentions: mentionedJid,
+  });
+}
+
+
 
 module.exports = {
   // Reminder features
@@ -728,4 +763,5 @@ module.exports = {
   promoteMember,
   demoteMember,
   kickNonAdmins,
+  setRoleCommand,
 };

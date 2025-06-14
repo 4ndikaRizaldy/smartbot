@@ -71,7 +71,8 @@ const {
   promoteMember,
   demoteMember,
   kickNonAdmins,
-  setRoleCommand,
+  setRole,
+  mentionRole,
 } = require("./grup");
 // Konfigurasi bahasa untuk format tanggal Indonesia
 moment.locale("id");
@@ -544,7 +545,12 @@ async function startBot() {
     } else if (textMessage === "!kicknonadmin") {
       await kickNonAdmins(remoteJid, sender, sock);
     } else if (textMessage.startsWith("!setrole")) {
-      await setRoleCommand(sock, remoteJid, sender, body);
+      const [_, phone, role] = textMessage.split(" ");
+      const targetJid = `${phone.replace(/[^0-9]/g, "")}@s.whatsapp.net`;
+      await setRole(remoteJid, sender, sock, targetJid, role);
+    } else if (textMessage.startsWith("!tag")) {
+      const [_, roleName] = textMessage.split(" ");
+      await mentionRole(remoteJid, sock, roleName);
     } else if (textMessage.startsWith("!promote ")) {
       const mentionedJid =
         msg.message.extendedTextMessage?.contextInfo?.mentionedJid;

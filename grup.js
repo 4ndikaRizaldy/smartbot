@@ -708,40 +708,58 @@ async function kickNonAdmins(remoteJid, sender, sock) {
   }
 }
 
-const path = "roles.json";
+const path = "./roles.json";
 
+// Baca data roles
 function loadRoles() {
   if (!fs.existsSync(path)) return {};
   return JSON.parse(fs.readFileSync(path));
 }
 
+// Simpan data roles
 function saveRoles(data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
-async function setRoleCommand(sock, remoteJid, sender, mentionedJid, roleName) {
-  if (!mentionedJid || mentionedJid.length === 0) {
+
+async function setRole(remoteJid, sender, sock, targetJid, roleName) {
+  const allowedUsers = ["6285253435963@s.whatsapp.net"];
+  const isAdmin = await isUserAdmin(remoteJid, sender, sock);
+  const isAllowed = allowedUsers.includes(sender);
+  if (!isAdmin && !isAllowed) {
+    return sock.sendMessage(remoteJid, { text: "⚠️ Kamu tidak punya izin!" });
+  }
+
+  const data = loadRoles();
+  if (!data[remoteJid]) data[remoteJid] = {};
+  if (!data[remoteJid][roleName]) data[remoteJid][roleName] = [];
+
+  if (!data[remoteJid][roleName].includes(targetJid)) {
+    data[remoteJid][roleName].push(targetJid);
+    saveRoles(data);
     return sock.sendMessage(remoteJid, {
-      text: "⚠️ Kamu harus menandai (mention) minimal satu anggota.",
+      text: `✅ ${targetJid.split("@")[0]} ditambahkan ke role *${roleName}*`,
+    });
+  } else {
+    return sock.sendMessage(remoteJid, {
+      text: `ℹ️ Sudah termasuk dalam role *${roleName}*`,
+    });
+  }
+}
+
+async function mentionRole(remoteJid, sock, roleName) {
+  const data = loadRoles();
+  if (!data[remoteJid] || !data[remoteJid][roleName]) {
+    return sock.sendMessage(remoteJid, {
+      text: `❌ Role *${roleName}* tidak ditemukan.`,
     });
   }
 
-  const roles = loadRoles();
-  const role = roleName.toLowerCase();
-
-  mentionedJid.forEach((jid) => {
-    roles[jid] = role;
-  });
-
-  saveRoles(roles);
-
-  const tagList = mentionedJid.map(jid => `@${jid.split("@")[0]}`).join(" ");
-
+  const members = data[remoteJid][roleName];
   await sock.sendMessage(remoteJid, {
-    text: `✅ Peran *${role}* berhasil diberikan kepada:\n${tagList}`,
-    mentions: mentionedJid,
+    text: `🔔 Mention untuk *${roleName}*:\n\n${members.map((m) => "@" + m.split("@")[0]).join(" ")}`,
+    mentions: members,
   });
 }
-
 
 
 module.exports = {
@@ -763,5 +781,6 @@ module.exports = {
   promoteMember,
   demoteMember,
   kickNonAdmins,
-  setRoleCommand,
+  setRole,
+  mentionRole,
 };

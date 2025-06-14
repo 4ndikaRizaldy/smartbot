@@ -708,7 +708,7 @@ async function kickNonAdmins(remoteJid, sender, sock) {
   }
 }
 
-const path = "./roles.json";
+const path = "roles.json";
 
 function loadRoles() {
   if (!fs.existsSync(path)) return {};

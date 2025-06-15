@@ -59,6 +59,7 @@ const {
   cancelReminder,
   setRepeatReminder,
   stopRepeatReminder,
+  isUserAdmin,
 
   // Group & Admin features
   mentionAll,
@@ -105,28 +106,6 @@ async function handleAutoResponse(message, remoteJid, sender, sock) {
     console.error("❌ Gagal mengirim pesan:", error);
   }
 }
-
-async function isUserAdmin(remoteJid, userJid, sock) {
-  try {
-    const metadata = await sock.groupMetadata(remoteJid);
-    const admins = metadata.participants
-      .filter(p => p.admin)
-      .map(p => p.id);
-
-    return admins.includes(userJid);
-  } catch (err) {
-    console.error("Gagal mengecek admin:", err);
-    return false;
-  }
-}
-
-async function isBotAdmin(remoteJid, sock) {
-  const metadata = await sock.groupMetadata(remoteJid);
-  const botNumber = sock.user.id.split(":")[0] + "@s.whatsapp.net";
-  const botInfo = metadata.participants.find(p => p.id === botNumber);
-  return botInfo?.admin !== null && botInfo?.admin !== undefined;
-}
-
 
 // STARTBOT/HIDUPKAN BOT
 async function startBot() {

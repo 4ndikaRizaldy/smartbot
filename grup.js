@@ -377,6 +377,7 @@ async function isBotAdmin(groupId, sock) {
 }
 
 // Cek apakah pengguna yang memberikan perintah adalah admin
+// Fungsi mengecek apakah user adalah admin grup
 async function isUserAdmin(remoteJid, sender, sock) {
   try {
     const groupMetadata = await sock.groupMetadata(remoteJid);
@@ -389,6 +390,7 @@ async function isUserAdmin(remoteJid, sender, sock) {
     return false;
   }
 }
+
 
 // Fungsi Buka/Tutup Grup dengan pengecekan admin
 async function setGroupRestriction(groupId, sock, isClosed, sender) {

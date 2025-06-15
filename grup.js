@@ -115,11 +115,17 @@ const setReminder = (textMessage, remoteJid, sender, sock, isGroup = false) => {
     text: `✅ Reminder disimpan untuk *${reminderTime.toLocaleString()}* dengan pesan:\n📢 ${message}`,
   });
 
+  // Simpan pengingat ke file
+  const reminders = loadReminders(); // Memuat pengingat yang ada
+  reminders.push({ date: reminderTime.toLocaleString(), time: reminderTime, message, isGroup }); // Tambahkan pengingat baru
+  saveReminders(reminders); // Simpan kembali ke file
+
   // Set timeout untuk mengirimkan reminder saat waktunya tiba
   setTimeout(() => {
     sock.sendMessage(remoteJid, { text: `🔔 *Reminder!*\n ${message}` });
   }, reminderTime - now);
 };
+
 
 // Fungsi untuk menampilkan semua reminder
 const listReminders = (remoteJid, sock) => {
@@ -220,53 +226,41 @@ const setRepeatReminder = (
 
   // Jika sudah ada reminder untuk user ini, hentikan yang lama
   if (repeatReminders[sender]) {
-    clearInterval(repeatReminders[sender]);
+    clearInterval(repeatReminders[sender].intervalID); // Hentikan pengingat lama
   }
 
   // Simpan interval baru ke dalam repeatReminders
-  repeatReminders[sender] = setInterval(() => {
-    sock.sendMessage(remoteJid, {
-      text: `🔔 *Reminder Berulang!*\n ${message}`,
-    });
-  }, timeMs);
+  repeatReminders[sender] = {
+    intervalID: setInterval(() => {
+      sock.sendMessage(remoteJid, {
+        text: `🔔 *Reminder Berulang!*\n ${message}`,
+      });
+    }, timeMs),
+    message: message, // Simpan pesan untuk referensi
+  };
 
   sock.sendMessage(remoteJid, {
-    text: `🔄 Reminder akan diulang setiap *${timeValue}${timeUnit}*: "${message}"\n\nKetik *!stoprepeat* untuk menghentikan.`,
+    text: `🔄 Reminder akan diulang setiap *${timeValue}${timeUnit}*: "${message}"\n\nKetik *!stopremind* untuk menghentikan.`,
   });
 };
 
 const stopRepeatReminder = (remoteJid, sender, textMessage, sock) => {
-  let parts = textMessage.split(" ");
-  if (parts.length < 2 || isNaN(parts[1])) {
+  if (!repeatReminders[sender]) {
     sock.sendMessage(remoteJid, {
-      text: "⚠️ Gunakan *!stopremind [nomor]* untuk menghentikan reminder tertentu! Contoh: *!stopremind 1*",
+      text: "⚠️ Tidak ada reminder aktif untuk dihentikan!",
     });
     return;
   }
 
-  let reminderIndex = parseInt(parts[1], 10) - 1; // Konversi ke index array (dimulai dari 0)
+  // Hentikan reminder
+  clearInterval(repeatReminders[sender].intervalID);
+  delete repeatReminders[sender]; // Hapus user jika tidak ada reminder tersisa
 
-  if (repeatReminders[sender] && repeatReminders[sender][reminderIndex]) {
-    let reminder = repeatReminders[sender][reminderIndex];
-
-    clearInterval(reminder.intervalID);
-    repeatReminders[sender].splice(reminderIndex, 1); // Hapus reminder dari array
-
-    if (repeatReminders[sender].length === 0) {
-      delete repeatReminders[sender]; // Hapus user jika tidak ada reminder tersisa
-    }
-
-    sock.sendMessage(remoteJid, {
-      text: `🛑 Reminder #${reminderIndex + 1} telah dihentikan!`,
-    });
-  } else {
-    sock.sendMessage(remoteJid, {
-      text: `⚠️ Reminder #${
-        reminderIndex + 1
-      } tidak ditemukan atau tidak aktif!`,
-    });
-  }
+  sock.sendMessage(remoteJid, {
+    text: `🛑 Semua reminder untuk ${sender} telah dihentikan!`,
+  });
 };
+
 
 /* 👥 *GRUP & ADMIN*  
 ━━━━━━━━━━━━━━━━━━  
@@ -839,6 +833,10 @@ module.exports = {
   cancelReminder,
   setRepeatReminder,
   stopRepeatReminder,
+  isUserAdmin,
+  groupSchedules,
+  saveScheduleToFile,
+
 
   // Group & Admin features
   mentionAll,
